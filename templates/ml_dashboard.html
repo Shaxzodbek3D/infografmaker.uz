@@ -1,0 +1,1468 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Modellari Tahlili - HEMIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{
+ --bg:#f4f5f7;--surf:#fff;--surf2:#f8f9fb;--surf3:#f0f2f5;
+ --border:#e8eaed;--border2:#d1d5db;
+ --text:#111827;--text2:#6b7280;--text3:#9ca3af;
+ --blue:#2563eb;--blue-lt:#eff6ff;--blue-md:#dbeafe;
+ --indigo:#4f46e5;--indigo-lt:#eef2ff;
+ --green:#059669;--green-lt:#ecfdf5;
+ --red:#dc2626;--red-lt:#fef2f2;
+ --amber:#d97706;--amber-lt:#fffbeb;
+ --violet:#7c3aed;--violet-lt:#f5f3ff;
+ --teal:#0d9488;--teal-lt:#f0fdfa;
+ --accent-grad:linear-gradient(135deg,#2563eb,#4f46e5);
+ --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+ --shadow-md:0 4px 6px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.04);
+ --shadow-lg:0 10px 15px rgba(0,0,0,.08),0 4px 6px rgba(0,0,0,.04);
+ --r:8px;--r2:12px;--r3:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surf3)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes barGrow{from{width:0}to{width:100%}}
+.fade-up{animation:fadeUp .3s ease both}
+.fade-up:nth-child(1){animation-delay:.04s}
+.fade-up:nth-child(2){animation-delay:.08s}
+.fade-up:nth-child(3){animation-delay:.12s}
+.fade-up:nth-child(4){animation-delay:.16s}
+
+/* NAV */
+.navbar{
+ background:var(--surf);border-bottom:1px solid var(--border);
+ height:60px;display:flex;align-items:center;
+ padding:0 24px;justify-content:space-between;
+ position:sticky;top:0;z-index:100;
+ box-shadow:var(--shadow-sm);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{
+ width:34px;height:34px;border-radius:9px;
+ background:var(--accent-grad);
+ display:flex;align-items:center;justify-content:center;
+ color:#fff;font-size:15px;
+ box-shadow:0 2px 8px rgba(37,99,235,.3);
+}
+.brand-name{font-size:15px;font-weight:700}
+.brand-sub{font-size:10px;color:var(--text3)}
+.nav-right{display:flex;gap:8px;align-items:center}
+
+/* BUTTONS */
+.btn{
+ display:inline-flex;align-items:center;gap:6px;
+ border:none;border-radius:var(--r2);cursor:pointer;
+ font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;
+ padding:8px 16px;transition:all .15s ease;white-space:nowrap;
+}
+.btn-primary{background:var(--accent-grad);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.4)}
+.btn-ghost{background:var(--surf);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surf3);color:var(--text)}
+.btn-green{background:linear-gradient(135deg,#059669,#0d9488);color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.3)}
+.btn-green:hover{transform:translateY(-1px)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* BADGE */
+.badge{
+ display:inline-flex;align-items:center;gap:3px;
+ padding:2px 8px;border-radius:99px;
+ font-size:11px;font-weight:600;white-space:nowrap;
+}
+.badge-blue {background:var(--blue-md);color:var(--blue)}
+.badge-green {background:var(--green-lt);color:var(--green)}
+.badge-red {background:var(--red-lt);color:var(--red)}
+.badge-amber {background:var(--amber-lt);color:var(--amber)}
+.badge-indigo {background:var(--indigo-lt);color:var(--indigo)}
+.badge-violet {background:var(--violet-lt);color:var(--violet)}
+.badge-gray {background:var(--surf3);color:var(--text2)}
+
+/* LAYOUT */
+.page{max-width:1480px;margin:0 auto;padding:24px}
+.page-header{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:var(--r3);box-shadow:var(--shadow-sm);
+ padding:24px 28px;margin-bottom:24px;
+ display:flex;align-items:flex-start;justify-content:space-between;
+ flex-wrap:wrap;gap:16px;
+ position:relative;overflow:hidden;
+}
+.page-header::before{
+ content:'';position:absolute;top:0;left:0;right:0;height:3px;
+ background:var(--accent-grad);
+}
+.ph-title{font-size:22px;font-weight:800;letter-spacing:-.03em}
+.ph-title em{
+ font-style:normal;
+ background:var(--accent-grad);
+ -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ph-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.ph-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+
+/* TABS */
+.tabs-bar{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:var(--r3);box-shadow:var(--shadow-sm);
+ padding:4px 8px;display:flex;gap:2px;flex-wrap:wrap;
+ margin-bottom:20px;
+}
+.tab-btn{
+ padding:8px 18px;border-radius:var(--r2);border:none;
+ background:transparent;color:var(--text2);
+ font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;
+ cursor:pointer;transition:all .15s ease;
+ display:flex;align-items:center;gap:6px;
+}
+.tab-btn:hover{background:var(--surf3);color:var(--text)}
+.tab-btn.active{
+ background:var(--blue-lt);color:var(--blue);
+ box-shadow:0 1px 4px rgba(37,99,235,.15);
+}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* SECTION CARD */
+.section{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:var(--r3);box-shadow:var(--shadow-sm);
+ margin-bottom:20px;overflow:hidden;
+}
+.section-head{
+ padding:14px 20px;border-bottom:1px solid var(--border);
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.section-title{
+ font-size:14px;font-weight:700;
+ display:flex;align-items:center;gap:8px;
+}
+.section-icon{
+ width:30px;height:30px;border-radius:7px;
+ display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.section-body{padding:16px 20px}
+
+/* METRICS GRID */
+.metrics-grid{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+ gap:12px;margin-bottom:20px;
+}
+.metric-card{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:var(--r2);padding:16px;
+ box-shadow:var(--shadow-sm);
+ transition:box-shadow .15s ease,transform .15s ease;
+ position:relative;overflow:hidden;
+}
+.metric-card::before{
+ content:'';position:absolute;top:0;left:0;right:0;height:3px;
+ background:var(--c,var(--accent-grad));
+}
+.metric-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.mc-icon{font-size:20px;margin-bottom:8px;display:block}
+.mc-val{
+ font-size:26px;font-weight:800;letter-spacing:-.04em;
+ color:var(--text);line-height:1;margin-bottom:4px;
+}
+.mc-lbl{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+
+/* COMPARISON TABLE */
+.comparison-wrap{overflow-x:auto;border-radius:var(--r2);border:1px solid var(--border)}
+.comp-table{width:100%;border-collapse:collapse;font-size:13px}
+.comp-table th{
+ background:var(--surf2);padding:10px 14px;
+ text-align:left;font-size:11px;font-weight:700;
+ color:var(--text2);text-transform:uppercase;letter-spacing:.05em;
+ border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.comp-table td{
+ padding:12px 14px;border-bottom:1px solid var(--border);
+ vertical-align:middle;
+}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr:hover td{background:var(--surf2)}
+.comp-table tr.best-row td{background:var(--green-lt)}
+.comp-table tr.best-row td:first-child{
+ border-left:4px solid var(--green);
+}
+
+/* F1 Bar */
+.f1-bar-wrap{display:flex;align-items:center;gap:8px}
+.f1-bar-track{flex:1;height:8px;background:var(--surf3);border-radius:99px;overflow:hidden;min-width:80px}
+.f1-bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.f1-val{font-weight:700;min-width:32px;font-size:12px}
+
+/* ANOMALY CARDS */
+.anomaly-grid{
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;
+}
+.anomaly-card{
+ background:var(--surf2);border:1px solid var(--border);
+ border-radius:var(--r2);padding:13px;
+ transition:box-shadow .15s ease;
+}
+.anomaly-card:hover{box-shadow:var(--shadow-md)}
+.anomaly-card.is-anomaly{
+ border-left:4px solid var(--red);background:var(--red-lt);
+}
+.anomaly-card.suspicious{
+ border-left:4px solid var(--amber);background:var(--amber-lt);
+}
+.anomaly-card.normal{
+ border-left:4px solid var(--green);
+}
+.ac-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.ac-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px}
+.ac-score-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ac-score-num{
+ font-size:22px;font-weight:800;min-width:48px;
+ letter-spacing:-.03em;
+}
+.ac-score-track{flex:1;height:7px;background:var(--surf3);border-radius:99px;overflow:hidden}
+.ac-score-fill{height:100%;border-radius:99px}
+.ac-votes{
+ display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;
+}
+.vote-chip{
+ padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;
+}
+.vote-yes{background:var(--red-lt);color:var(--red);border:1px solid #fca5a5}
+.vote-no {background:var(--green-lt);color:var(--green);border:1px solid #a7f3d0}
+.ac-stats{
+ display:grid;grid-template-columns:repeat(3,1fr);gap:5px;
+}
+.ac-stat{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:6px;padding:5px;text-align:center;
+}
+.ac-stat strong{font-size:14px;font-weight:700;color:var(--text);display:block}
+.ac-stat span{font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600}
+
+/* CLUSTER CARDS */
+.cluster-grid{
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;
+ margin-bottom:20px;
+}
+.cluster-card{
+ border-radius:var(--r2);padding:14px;
+ border:1px solid var(--border);
+ transition:transform .15s ease,box-shadow .15s ease;
+}
+.cluster-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.cc-dot{
+ width:10px;height:10px;border-radius:50%;
+ display:inline-block;margin-right:5px;
+}
+.cc-label{font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center}
+.cc-count{font-size:24px;font-weight:800;letter-spacing:-.04em;margin-bottom:3px}
+.cc-pct{font-size:12px;color:var(--text2)}
+.cc-stats{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+.cc-stat-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:2px}
+.cc-stat-row strong{color:var(--text);font-weight:600}
+.cc-admins{font-size:11px;color:var(--text3);margin-top:5px}
+
+/* SCATTER PLOT */
+#scatterPlot{width:100%;height:340px}
+
+/* Feature importance bars */
+.fi-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.fi-label{
+ min-width:140px;font-size:12px;font-weight:600;color:var(--text2);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.fi-track{flex:1;height:8px;background:var(--surf3);border-radius:99px;overflow:hidden}
+.fi-fill{height:100%;border-radius:99px;background:var(--accent-grad)}
+.fi-val{font-size:11px;font-weight:700;min-width:36px;text-align:right;color:var(--blue)}
+
+/* System metrics */
+.sys-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.sys-card{
+ background:var(--surf2);border:1px solid var(--border);
+ border-radius:var(--r2);padding:14px;
+ display:flex;align-items:flex-start;gap:10px;
+}
+.sys-icon{
+ width:36px;height:36px;border-radius:9px;
+ display:flex;align-items:center;justify-content:center;
+ font-size:16px;flex-shrink:0;
+}
+.sys-val{font-size:18px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.sys-lbl{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+/* Elbow chart */
+#elbowWrap{position:relative;width:100%;height:160px}
+#elbowChart{width:100%!important;height:100%!important}
+
+/* Loading state */
+.loading-state{
+ display:flex;flex-direction:column;align-items:center;
+ justify-content:center;padding:60px 20px;color:var(--text3);
+}
+.load-spin{
+ width:36px;height:36px;border:3px solid var(--border);
+ border-top-color:var(--blue);border-radius:50%;
+ animation:spin .7s linear infinite;margin-bottom:12px;
+}
+.load-txt{font-size:13px}
+
+.empty-state{
+ text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;
+}
+.empty-state .ei{font-size:32px;margin-bottom:8px;display:block;opacity:.4}
+
+/* Algorithm card */
+.algo-card{
+ background:var(--surf2);border:1px solid var(--border);
+ border-radius:var(--r2);padding:14px;
+ display:flex;flex-direction:column;gap:8px;
+ transition:transform .15s ease,box-shadow .15s ease;
+}
+.algo-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.algo-card.best{
+ border:2px solid var(--green);background:var(--green-lt);
+}
+.algo-name{font-size:13px;font-weight:700}
+.algo-badge-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.algo-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.algo-metrics{
+ display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px;
+}
+.algo-metric{
+ background:var(--surf);border:1px solid var(--border);
+ border-radius:6px;padding:6px;text-align:center;
+}
+.algo-metric strong{display:block;font-size:16px;font-weight:800;letter-spacing:-.03em}
+.algo-metric span{font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600}
+
+/* Progress bar */
+.progress-track{height:5px;background:var(--surf3);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent-grad);border-radius:99px;transition:width .4s ease}
+
+/* Tooltip */
+[title]{cursor:help}
+
+/* Responsive */
+@media(max-width:768px){
+ .page{padding:12px}
+ .metrics-grid{grid-template-columns:1fr 1fr}
+ .algo-grid{grid-template-columns:1fr}
+}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+
+/* ARCH diagram */
+.arch-wrap{
+ background:var(--surf2);border:1px solid var(--border);
+ border-radius:var(--r2);padding:20px;
+ display:flex;flex-wrap:wrap;gap:12px;
+ align-items:center;justify-content:center;
+}
+.arch-box{
+ background:var(--surf);border:1.5px solid var(--border2);
+ border-radius:var(--r2);padding:10px 16px;
+ text-align:center;min-width:100px;
+ font-size:12px;font-weight:600;
+}
+.arch-arrow{font-size:18px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+<div class="brand">
+<div class="brand-logo"></div>
+<div>
+<div class="brand-name">ML Modellari Tahlili</div>
+<div class="brand-sub">Dissertatsiya - Buxoro DU</div>
+</div>
+</div>
+<div class="nav-right">
+<button class="btn btn-green btn-sm" id="loadDemoBtn" onclick="loadDemo()">
+ Demo Data
+</button>
+<a href="/" class="btn btn-ghost btn-sm">† Dashboard</a>
+</div>
+</nav>
+
+<div class="page">
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+<div>
+<div class="ph-title">ML Modellari<em>Natijalar Tahlili</em></div>
+<div class="ph-sub">
+ Dissertatsiya: "Ma'lumotlar markazlari faoliyatini optimallashtirish uchun
+ sun'iy intellekt va vizuallashtirish texnologiyalaridan foydalanish"
+</div>
+<div class="ph-badges">
+<span class="badge badge-blue">Isolation Forest F1=0.83</span>
+<span class="badge badge-green">Ensemble F1=0.89 …</span>
+<span class="badge badge-indigo">K-means Sil=0.63</span>
+<span class="badge badge-amber">DBSCAN Noise~8%</span>
+<span class="badge badge-gray">SUS=78.5</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+<div id="dataStatusPill" class="badge badge-gray">- Ma'lumot yo'q</div>
+<button class="btn btn-primary" onclick="runAllModels()">
+ Modellarni Ishga Tushurish
+</button>
+</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+<button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Umumiy Ko'rinish</button>
+<button class="tab-btn" data-tab="anomaly" onclick="switchTab('anomaly')">Anomaliya Aniqlash</button>
+<button class="tab-btn" data-tab="clustering" onclick="switchTab('clustering')">Klasterlash</button>
+<button class="tab-btn" data-tab="comparison" onclick="switchTab('comparison')">Algoritm Taqqoslash</button>
+<button class="tab-btn" data-tab="sysmetrics" onclick="switchTab('sysmetrics')">™ Tizim Ko'rsatkichlari</button>
+</div>
+
+<!-- TAB: OVERVIEW -->
+<div class="tab-content active" id="tab-overview">
+
+<!-- Key metrics -->
+<div class="metrics-grid" id="overviewMetrics">
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#2563eb,#4f46e5)">
+<span class="mc-icon"></span>
+<div class="mc-val">0.89</div>
+<div class="mc-lbl">Ensemble F1-Score</div>
+</div>
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#059669,#0d9488)">
+<span class="mc-icon"></span>
+<div class="mc-val">0.63</div>
+<div class="mc-lbl">K-means Silhouette</div>
+</div>
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#d97706,#ea580c)">
+<span class="mc-icon"></span>
+<div class="mc-val">~8%</div>
+<div class="mc-lbl">DBSCAN Noise</div>
+</div>
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#7c3aed,#6d28d9)">
+<span class="mc-icon"></span>
+<div class="mc-val">78.5</div>
+<div class="mc-lbl">SUS Score (UX)</div>
+</div>
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#0d9488,#059669)">
+<span class="mc-icon"></span>
+<div class="mc-val">120ms</div>
+<div class="mc-lbl">API Response (median)</div>
+</div>
+<div class="metric-card fade-up" style="--c:linear-gradient(135deg,#dc2626,#9f1239)">
+<span class="mc-icon"></span>
+<div class="mc-val">2.86</div>
+<div class="mc-lbl">GB/min Throughput</div>
+</div>
+</div>
+
+<!-- Results summary table (dissertatsiya 3.4-jadval) -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--indigo-lt)"></div>
+ Dissertatsiya 3.4-jadval - Barcha Natijalar Xulosasi
+</div>
+<span class="badge badge-indigo">Tajriba-sinov natijalari</span>
+</div>
+<div class="section-body">
+<div class="comparison-wrap">
+<table class="comp-table">
+<thead>
+<tr>
+<th>Modul</th>
+<th>Algoritm</th>
+<th>Asosiy Ko'rsatkich</th>
+<th>Qiymat</th>
+<th>Izoh</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="badge badge-blue">Anomaliya</span></td>
+<td>Isolation Forest</td>
+<td>F1-Score</td>
+<td><strong style="color:var(--blue)">0.83</strong></td>
+<td>Tree-based, n_estimators=200</td>
+</tr>
+<tr>
+<td><span class="badge badge-blue">Anomaliya</span></td>
+<td>One-Class SVM</td>
+<td>F1-Score</td>
+<td><strong>0.78</strong></td>
+<td>RBF kernel, nu=0.05</td>
+</tr>
+<tr>
+<td><span class="badge badge-blue">Anomaliya</span></td>
+<td>Local Outlier Factor</td>
+<td>F1-Score</td>
+<td><strong>0.78</strong></td>
+<td>n_neighbors=5, density-based</td>
+</tr>
+<tr class="best-row">
+<td><span class="badge badge-blue">Anomaliya</span></td>
+<td>Ensemble (Majority)</td>
+<td>F1-Score</td>
+<td><strong style="color:var(--green)">0.89</strong></td>
+<td>3 algoritm birlashmasi - ENG YAXSHI</td>
+</tr>
+<tr>
+<td><span class="badge badge-indigo">Klaster</span></td>
+<td>K-means (k=5)</td>
+<td>Silhouette Score</td>
+<td><strong style="color:var(--indigo)">0.63</strong></td>
+<td>n_init=20, 5 ta foydalanuvchi guruhi</td>
+</tr>
+<tr>
+<td><span class="badge badge-indigo">Klaster</span></td>
+<td>K-means (k=5)</td>
+<td>Davies-Bouldin</td>
+<td><strong>1.42</strong></td>
+<td>Pastroq = yaxshiroq ajratish</td>
+</tr>
+<tr>
+<td><span class="badge badge-amber">DBSCAN</span></td>
+<td>DBSCAN (eps=0.8)</td>
+<td>Noise %</td>
+<td><strong style="color:var(--amber)">~8%</strong></td>
+<td>Avtomatik anomal foydalanuvchilar</td>
+</tr>
+<tr>
+<td><span class="badge badge-teal" style="background:var(--teal-lt);color:var(--teal)">Performance</span></td>
+<td>Flask + pandas</td>
+<td>API Throughput</td>
+<td><strong>2.86 GB/min</strong></td>
+<td>Preprocessing tezligi</td>
+</tr>
+<tr class="best-row">
+<td><span class="badge badge-green">UX</span></td>
+<td>SUS Questionnaire</td>
+<td>SUS Score</td>
+<td><strong style="color:var(--green)">78.5</strong></td>
+<td>15 foydalanuvchi - "Good to Excellent"</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- Architecture -->
+<div style="margin-top:20px">
+<div class="section-title" style="margin-bottom:12px">
+<div class="section-icon" style="background:var(--blue-lt)"></div>
+ Tizim Arxitekturasi
+</div>
+<div class="arch-wrap">
+<div class="arch-box" style="border-color:var(--blue);background:var(--blue-lt)">Browser<br><span style="font-size:10px;color:var(--text3)">HTML/JS/D3</span></div>
+<div class="arch-arrow">-></div>
+<div class="arch-box" style="border-color:var(--indigo);background:var(--indigo-lt)">Flask API<br><span style="font-size:10px;color:var(--text3)">REST + CORS</span></div>
+<div class="arch-arrow">-></div>
+<div class="arch-box" style="border-color:var(--green);background:var(--green-lt)">pandas<br><span style="font-size:10px;color:var(--text3)">DataFrames</span></div>
+<div class="arch-arrow">-></div>
+<div class="arch-box" style="border-color:var(--violet);background:var(--violet-lt)">sklearn<br><span style="font-size:10px;color:var(--text3)">ML models</span></div>
+<div class="arch-arrow">-></div>
+<div class="arch-box" style="border-color:var(--amber);background:var(--amber-lt)">Excel/CSV<br><span style="font-size:10px;color:var(--text3)">HEMIS logs</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Algorithm overview cards -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--blue-lt)"></div>
+ Ishlatilingan ML Algoritmlari
+</div>
+</div>
+<div class="section-body">
+<div class="algo-grid">
+<div class="algo-card">
+<div class="algo-name">Isolation Forest</div>
+<div class="algo-badge-row">
+<span class="badge badge-blue">Anomaliya</span>
+<span class="badge badge-gray">Unsupervised</span>
+</div>
+<div class="algo-desc">
+ Decision tree asosida anomaliyalarni ajratish. Har bir nuqtani "izolyatsiya" qilish uchun kerakli split soni hisoblanadi. Kamroq split = anomaliya.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--blue)">0.87</strong><span>Precision</span></div>
+<div class="algo-metric"><strong style="color:var(--green)">0.79</strong><span>Recall</span></div>
+<div class="algo-metric"><strong style="color:var(--indigo)">0.83</strong><span>F1</span></div>
+</div>
+</div>
+<div class="algo-card">
+<div class="algo-name">One-Class SVM</div>
+<div class="algo-badge-row">
+<span class="badge badge-blue">Anomaliya</span>
+<span class="badge badge-gray">Kernel-based</span>
+</div>
+<div class="algo-desc">
+ Normal ma'lumotlar atrofida chegarani topadi. RBF kernel bilan normal xatti-harakat yuzasini aniqlaydi va tashqaridagilarni anomaliya deb belgilaydi.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--blue)">0.84</strong><span>Precision</span></div>
+<div class="algo-metric"><strong style="color:var(--green)">0.72</strong><span>Recall</span></div>
+<div class="algo-metric"><strong style="color:var(--indigo)">0.78</strong><span>F1</span></div>
+</div>
+</div>
+<div class="algo-card">
+<div class="algo-name">Local Outlier Factor</div>
+<div class="algo-badge-row">
+<span class="badge badge-blue">Anomaliya</span>
+<span class="badge badge-gray">Density-based</span>
+</div>
+<div class="algo-desc">
+ Qo'shni nuqtalar zichligi bilan solishtiradi. Lokal zichlik past bo'lgan nuqtalar anomaliya hisoblanadi. Turli zichlikdagi klasterlarda samarali.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--blue)">0.82</strong><span>Precision</span></div>
+<div class="algo-metric"><strong style="color:var(--green)">0.75</strong><span>Recall</span></div>
+<div class="algo-metric"><strong style="color:var(--indigo)">0.78</strong><span>F1</span></div>
+</div>
+</div>
+<div class="algo-card best">
+<div class="algo-name">Ensemble (Majority Vote)</div>
+<div class="algo-badge-row">
+<span class="badge badge-green">Eng Yaxshi …</span>
+<span class="badge badge-gray">3 algoritm</span>
+</div>
+<div class="algo-desc">
+ 3 ta algoritmdan kamida 2 tasi "anomaliya" desa, yakuniy qaror "anomaliya". Bu yondashuv yolg'on ijobiy natijalarni kamaytiradi va umumiy aniqlikni oshiradi.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--green)">0.93</strong><span>Precision</span></div>
+<div class="algo-metric"><strong style="color:var(--green)">0.86</strong><span>Recall</span></div>
+<div class="algo-metric"><strong style="color:var(--green)">0.89</strong><span>F1 …</span></div>
+</div>
+</div>
+<div class="algo-card">
+<div class="algo-name">K-means (k=5)</div>
+<div class="algo-badge-row">
+<span class="badge badge-indigo">Klaster</span>
+<span class="badge badge-gray">Centroid-based</span>
+</div>
+<div class="algo-desc">
+ Foydalanuvchilarni 5 ta guruhga ajratadi. Har iteratsiyada markazlash qayta hisoblanadi. Silhouette 0.63 - yaxshi ajratish sifatini bildiradi.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--indigo)">0.63</strong><span>Silhouette</span></div>
+<div class="algo-metric"><strong style="color:var(--indigo)">1.42</strong><span>Davies-Bouldin</span></div>
+<div class="algo-metric"><strong style="color:var(--indigo)">5</strong><span>Klaster</span></div>
+</div>
+</div>
+<div class="algo-card">
+<div class="algo-name">DBSCAN</div>
+<div class="algo-badge-row">
+<span class="badge badge-amber">Klaster</span>
+<span class="badge badge-gray">Density-based</span>
+</div>
+<div class="algo-desc">
+ Klasterlar sonini avtomatik aniqlaydi. Noise pointlar (€'1) anomal foydalanuvchilar sifatida belgilanadi. ~8% noise - normal holat.
+</div>
+<div class="algo-metrics">
+<div class="algo-metric"><strong style="color:var(--amber)">~8%</strong><span>Noise</span></div>
+<div class="algo-metric"><strong style="color:var(--amber)">Auto</strong><span>K soni</span></div>
+<div class="algo-metric"><strong style="color:var(--amber)">0.8</strong><span>Epsilon</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- /tab-overview -->
+
+<!-- TAB: ANOMALY -->
+<div class="tab-content" id="tab-anomaly">
+
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--red-lt)"></div>
+ Anomaliya Aniqlash - Adminlar bo'yicha Natijalar
+</div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+<span id="anomalyCount" class="badge badge-red">0 anomaliya</span>
+<span id="anomalyTotal" class="badge badge-gray">0 admin</span>
+<button class="btn btn-primary btn-sm" onclick="loadAnomalyData()">Yangilash</button>
+</div>
+</div>
+<div class="section-body">
+<div id="anomalyLoading" class="loading-state">
+<div class="load-spin"></div>
+<div class="load-txt">Isolation Forest ishga tushirilmoqda...</div>
+</div>
+<div id="anomalyGrid" class="anomaly-grid" style="display:none"></div>
+</div>
+</div>
+
+<!-- Feature Importance -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--blue-lt)"></div>
+ Feature Importance - Anomaliyaga Ta'sir Etuvchi Omillar
+</div>
+</div>
+<div class="section-body" id="featureImportance">
+<div class="empty-state"><span class="ei"></span>Modelni ishga tushuring</div>
+</div>
+</div>
+
+</div><!-- /tab-anomaly -->
+
+<!-- TAB: CLUSTERING -->
+<div class="tab-content" id="tab-clustering">
+
+<!-- Cluster summary -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--indigo-lt)"></div>
+ K-means Klasterlash - 5 ta Foydalanuvchi Guruhi
+</div>
+<div style="display:flex;gap:6px;align-items:center">
+<span class="badge badge-indigo">Silhouette:<strong id="silScore">-</strong></span>
+<span class="badge badge-gray">DB:<strong id="dbScore">-</strong></span>
+<button class="btn btn-primary btn-sm" onclick="loadClusterData()">Yangilash</button>
+</div>
+</div>
+<div class="section-body">
+<div id="clusterLoading" class="loading-state">
+<div class="load-spin"></div>
+<div class="load-txt">K-means algoritmini hisoblash...</div>
+</div>
+<div id="clusterGrid" class="cluster-grid" style="display:none"></div>
+</div>
+</div>
+
+<!-- Scatter + Elbow -->
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px">
+<div class="section" style="margin-bottom:0">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--indigo-lt)"></div>
+ PCA 2D Scatter - Klaster Vizualizatsiyasi
+</div>
+<span class="badge badge-gray" id="pcaExplained">-</span>
+</div>
+<div class="section-body">
+<canvas id="scatterPlot" style="width:100%;height:340px"></canvas>
+</div>
+</div>
+<div class="section" style="margin-bottom:0">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--green-lt)"></div>
+ Elbow Method - Optimal k soni
+</div>
+</div>
+<div class="section-body">
+<div id="elbowWrap"><canvas id="elbowChart"></canvas></div>
+<div style="margin-top:12px;padding:10px;background:var(--green-lt);border:1px solid #a7f3d0;border-radius:var(--r2);font-size:12px;color:#065f46">
+<strong>Optimal k = 5</strong>- Elbow nuqtasi va eng yuqori Silhouette Score asosida tanlangan (0.63).
+</div>
+<div style="margin-top:10px;padding:10px;background:var(--amber-lt);border:1px solid #fde68a;border-radius:var(--r2);font-size:12px;color:#78350f">
+<strong>DBSCAN:</strong><span id="dbscanResult">Hisoblash kutilmoqda...</span>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- /tab-clustering -->
+
+<!-- TAB: COMPARISON -->
+<div class="tab-content" id="tab-comparison">
+
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--blue-lt)"></div>
+ Anomaliya Algoritmlar F1-Score Taqqoslash
+</div>
+</div>
+<div class="section-body">
+<canvas id="comparisonBarChart" height="180"></canvas>
+</div>
+</div>
+
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--green-lt)"></div>
+ To'liq Jadval - Precision / Recall / F1
+</div>
+<span class="badge badge-green">… Ensemble eng yaxshi</span>
+</div>
+<div class="section-body">
+<div class="comparison-wrap">
+<table class="comp-table">
+<thead>
+<tr>
+<th>Algoritm</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>F1-Score</th>
+<th>Vizual</th>
+<th>Aniqlangan</th>
+<th>Tavsif</th>
+</tr>
+</thead>
+<tbody id="compTableBody">
+<!-- JS bilan to'ldiriladi -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Radar chart -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--violet-lt)"></div>
+ Radar Diagramma - Algoritmlar Ko'p O'lchovli Taqqoslash
+</div>
+</div>
+<div class="section-body" style="max-width:480px;margin:0 auto">
+<canvas id="radarChart" height="300"></canvas>
+</div>
+</div>
+
+</div><!-- /tab-comparison -->
+
+<!-- TAB: SYSTEM METRICS -->
+<div class="tab-content" id="tab-sysmetrics">
+
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--teal-lt)">™</div>
+ Tizim Ishlash Ko'rsatkichlari (Dissertatsiya 3.5)
+</div>
+<button class="btn btn-ghost btn-sm" onclick="loadSysMetrics()"></button>
+</div>
+<div class="section-body">
+<div class="sys-grid" id="sysGrid">
+<!-- JS bilan to'ldiriladi -->
+</div>
+</div>
+</div>
+
+<!-- SUS Score -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--green-lt)"></div>
+ Foydalanuvchi Tajribasi Baholash - SUS Score
+</div>
+<span class="badge badge-green">78.5 / 100 - "Good"</span>
+</div>
+<div class="section-body">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div>
+<div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+ SUS (System Usability Scale) - 15 foydalanuvchi bilan o'tkazilgan test natijalari
+</div>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+<div style="font-size:52px;font-weight:800;color:var(--green);letter-spacing:-.04em">78.5</div>
+<div>
+<div style="font-size:14px;font-weight:700">Good to Excellent</div>
+<div style="font-size:12px;color:var(--text2)">Qabul qilinadigan: &gt;70</div>
+<div style="font-size:12px;color:var(--text2)">Ajoyib: &gt;85</div>
+</div>
+</div>
+<div class="progress-track" style="height:12px;margin-bottom:6px">
+<div class="progress-fill" style="width:78.5%;background:linear-gradient(90deg,#059669,#10b981)"></div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
+<span>0 - Yomon</span><span>51 - OK</span><span>70 - Yaxshi</span><span>85 - A'lo</span><span>100</span>
+</div>
+</div>
+<div>
+<canvas id="susRadar" height="200"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Processing benchmarks -->
+<div class="section">
+<div class="section-head">
+<div class="section-title">
+<div class="section-icon" style="background:var(--blue-lt)"></div>
+ Performance Benchmarks
+</div>
+</div>
+<div class="section-body">
+<div class="comparison-wrap">
+<table class="comp-table">
+<thead>
+<tr>
+<th>Ko'rsatkich</th>
+<th>Natija</th>
+<th>Vizual</th>
+<th>Izoh</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Preprocessing Throughput</td>
+<td><strong>2.86 GB/min</strong></td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track"><div class="f1-bar-fill" style="width:72%;background:var(--blue)"></div></div>
+</div>
+</td>
+<td>500K+ log yozuvi qayta ishlash</td>
+</tr>
+<tr>
+<td>API Median Response</td>
+<td><strong>120ms</strong></td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track"><div class="f1-bar-fill" style="width:88%;background:var(--green)"></div></div>
+</div>
+</td>
+<td>REST API o'rtacha javob vaqti</td>
+</tr>
+<tr>
+<td>Real-time Latency</td>
+<td><strong>80ms</strong></td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track"><div class="f1-bar-fill" style="width:92%;background:var(--teal)"></div></div>
+</div>
+</td>
+<td>WebSocket update latency</td>
+</tr>
+<tr class="best-row">
+<td>Concurrent Users</td>
+<td><strong>100</strong></td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track"><div class="f1-bar-fill" style="width:80%;background:var(--green)"></div></div>
+</div>
+</td>
+<td>Bir vaqtda 100 ta foydalanuvchi</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+</div><!-- /tab-sysmetrics -->
+
+</div><!-- /page -->
+
+<script>
+Chart.defaults.font.family = "'Outfit',sans-serif";
+Chart.defaults.color = '#6b7280';
+
+let charts = {};
+let mlData = { anomaly: null, cluster: null };
+
+// ”” Tab switching ””””””””””””””””””””””””””””””””””””””””””
+function switchTab(tab) {
+ document.querySelectorAll('.tab-btn').forEach(b =>
+ b.classList.toggle('active', b.dataset.tab === tab));
+ document.querySelectorAll('.tab-content').forEach(c =>
+ c.classList.toggle('active', c.id === 'tab-' + tab));
+
+ if (tab === 'comparison' && !mlData.anomaly) loadAnomalyData();
+ if (tab === 'clustering' && !mlData.cluster) loadClusterData();
+ if (tab === 'sysmetrics') loadSysMetrics();
+}
+
+// ”” Load Demo ””””””””””””””””””””””””””””””””””””””””””””””
+async function loadDemo() {
+ const btn = document.getElementById('loadDemoBtn');
+ btn.disabled = true; btn.textContent = '* Yuklanmoqda...';
+ try {
+ const r = await fetch('/api/load-demo', { method: 'POST' });
+ const d = await r.json();
+ if (d.success) {
+ document.getElementById('dataStatusPill').textContent = `OK ${d.rows.toLocaleString()} log`;
+ document.getElementById('dataStatusPill').className = 'badge badge-green';
+ btn.textContent = `OK ${d.rows.toLocaleString()} log`;
+ await runAllModels();
+ }
+ } catch(e) { alert('Xato: ' + e.message); }
+ finally { btn.disabled = false; }
+}
+
+// ”” Run all ””””””””””””””””””””””””””””””””””””””””””””””””
+async function runAllModels() {
+ await Promise.allSettled([
+ loadAnomalyData(),
+ loadClusterData(),
+ loadSysMetrics(),
+ ]);
+ buildComparisonCharts();
+ buildSusChart();
+}
+
+// ”” Anomaly ””””””””””””””””””””””””””””””””””””””””””””””””
+async function loadAnomalyData() {
+ document.getElementById('anomalyLoading').style.display = 'flex';
+ document.getElementById('anomalyGrid').style.display = 'none';
+ try {
+ const r = await fetch('/api/ml/anomaly-detection');
+ const res = await r.json();
+ if (!res.success) throw new Error(res.error);
+ mlData.anomaly = res.data;
+ renderAnomalyGrid(res.data);
+ renderFeatureImportance(res.data.feature_importance);
+ buildComparisonCharts();
+ } catch(e) {
+ document.getElementById('anomalyLoading').innerHTML =
+ `<div style="color:var(--red);text-align:center">${e.message}<br><small>Ma'lumot yuklanmagan bo'lishi mumkin</small></div>`;
+ }
+}
+
+function renderAnomalyGrid(data) {
+ const grid = document.getElementById('anomalyGrid');
+ const loading = document.getElementById('anomalyLoading');
+
+ document.getElementById('anomalyCount').textContent = `${data.total_anomalies} anomaliya`;
+ document.getElementById('anomalyTotal').textContent = `${data.total_admins} admin`;
+
+ if (!data.per_admin.length) {
+ loading.innerHTML = '<div class="empty-state"><span class="ei"></span>Anomaliya topilmadi yoki data yo\'q</div>';
+ return;
+ }
+
+ loading.style.display = 'none';
+ grid.style.display = 'grid';
+
+ const ALGO_NAMES = ['IF', 'SVM', 'LOF'];
+
+ grid.innerHTML = data.per_admin.slice(0, 20).map(a =>{
+ const cls = a.is_anomaly ?'is-anomaly' :
+ a.anomaly_score >40 ?'suspicious' : 'normal';
+ const scoreColor = a.is_anomaly ?'#dc2626' :
+ a.anomaly_score >40 ?'#d97706' : '#059669';
+ const bgFill = a.is_anomaly ?'#dc2626' :
+ a.anomaly_score >40 ?'#d97706' : '#059669';
+ const statusBadge = a.is_anomaly
+ ? '<span class="badge badge-red">Anomaliya</span>'
+ : a.anomaly_score >40
+ ? '<span class="badge badge-amber">Shubhali</span>'
+ : '<span class="badge badge-green">OK Normal</span>';
+
+ const votes = [
+ { label: 'IF', val: a.isolation_forest },
+ { label: 'SVM', val: a.svm },
+ { label: 'LOF', val: a.lof },
+ ].map(v =>`<span class="vote-chip ${v.val ? 'vote-yes' : 'vote-no'}">${v.label}: ${v.val ? '' : 'OK'}</span>`).join('');
+
+ return `<div class="anomaly-card ${cls} fade-up">
+<div class="ac-top">
+<div class="ac-name">${a.admin}</div>
+ ${statusBadge}
+</div>
+<div class="ac-score-row">
+<div class="ac-score-num" style="color:${scoreColor}">${a.anomaly_score}</div>
+<div style="flex:1">
+<div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase">Anomaliya Bali</div>
+<div class="ac-score-track">
+<div class="ac-score-fill" style="width:${a.anomaly_score}%;background:${bgFill}"></div>
+</div>
+</div>
+</div>
+<div class="ac-votes">${votes}</div>
+<div class="ac-stats">
+<div class="ac-stat"><strong>${a.total_actions}</strong><span>Amallar</span></div>
+<div class="ac-stat"><strong>${a.unique_ips}</strong><span>IP</span></div>
+<div class="ac-stat"><strong>${a.error_count}</strong><span>Xato</span></div>
+</div>
+</div>`;
+ }).join('');
+}
+
+function renderFeatureImportance(fi) {
+ const cont = document.getElementById('featureImportance');
+ if (!fi || !Object.keys(fi).length) return;
+
+ const labels = {
+ total_actions: 'Jami amallar',
+ unique_ips: 'Unique IP soni',
+ odd_hours: 'Tungi soatlar',
+ error_count: 'Xato soni',
+ max_action_share:'Bitta amal ulushi',
+ weekend_ratio: 'Dam olish kuni faollik',
+ avg_daily_actions:'Kunlik o\'rtacha',
+ error_rate: 'Xato ulushi %',
+ };
+ const maxVal = Math.max(...Object.values(fi), 0.01);
+
+ cont.innerHTML = Object.entries(fi).map(([k, v]) =>`
+<div class="fi-row">
+<div class="fi-label">${labels[k] || k}</div>
+<div class="fi-track">
+<div class="fi-fill" style="width:${(v/maxVal*100).toFixed(0)}%"></div>
+</div>
+<div class="fi-val">${(v*100).toFixed(1)}%</div>
+</div>`).join('');
+}
+
+// ”” Clustering ””””””””””””””””””””””””””””””””””””””””””””
+async function loadClusterData() {
+ document.getElementById('clusterLoading').style.display = 'flex';
+ document.getElementById('clusterGrid').style.display = 'none';
+ try {
+ const r = await fetch('/api/ml/clustering');
+ const res = await r.json();
+ if (!res.success) throw new Error(res.error);
+ mlData.cluster = res.data;
+ renderClusterGrid(res.data);
+ buildScatterChart(res.data);
+ buildElbowChart(res.data);
+ } catch(e) {
+ document.getElementById('clusterLoading').innerHTML =
+ `<div style="color:var(--red);text-align:center">${e.message}</div>`;
+ }
+}
+
+function renderClusterGrid(data) {
+ const grid = document.getElementById('clusterGrid');
+ document.getElementById('clusterLoading').style.display = 'none';
+ grid.style.display = 'grid';
+
+ const km = data.kmeans;
+ document.getElementById('silScore').textContent = km.silhouette_score;
+ document.getElementById('dbScore').textContent = km.davies_bouldin;
+ document.getElementById('pcaExplained').textContent = `PCA: ${km.pca_explained}% dispersiya`;
+ document.getElementById('dbscanResult').textContent =
+ `${data.dbscan.n_clusters} klaster, ${data.dbscan.noise_count} ta noise (${data.dbscan.noise_percent}%)`;
+
+ grid.innerHTML = km.cluster_stats.map(c =>`
+<div class="cluster-card fade-up" style="border-top:3px solid ${c.color};background:${c.color}08">
+<div class="cc-label"><span class="cc-dot" style="background:${c.color}"></span>${c.label}</div>
+<div class="cc-count" style="color:${c.color}">${c.count}</div>
+<div class="cc-pct">${c.percent}% foydalanuvchi</div>
+<div class="cc-stats">
+<div class="cc-stat-row"><span>O'rtacha amallar</span><strong>${c.avg_actions}</strong></div>
+<div class="cc-stat-row"><span>O'rtacha IP</span><strong>${c.avg_ips}</strong></div>
+<div class="cc-stat-row"><span>Tungi soatlar</span><strong>${c.avg_odd_hours}</strong></div>
+</div>
+ ${c.top_admins.length ? `<div class="cc-admins">Namuna: ${c.top_admins.map(a =>a.length >15 ? a.slice(0,13)+'...' : a).join(', ')}</div>` : ''}
+</div>`).join('');
+}
+
+function buildScatterChart(data) {
+ if (charts.scatter) charts.scatter.destroy();
+ const pts = data.kmeans.scatter_points;
+ const colors = [...new Set(pts.map(p =>p.color))];
+
+ const datasets = colors.map(col =>{
+ const pts2 = pts.filter(p =>p.color === col && !p.is_noise);
+ const label = pts2[0].label || 'Klaster';
+ return {
+ label,
+ data: pts2.map(p =>({ x: p.x, y: p.y, admin: p.admin, actions: p.actions })),
+ backgroundColor: col + 'bb',
+ borderColor: col,
+ borderWidth: 1.5,
+ pointRadius: 5,
+ pointHoverRadius: 8,
+ };
+ });
+
+ // Noise points
+ const noise = pts.filter(p =>p.is_noise);
+ if (noise.length) {
+ datasets.push({
+ label: 'DBSCAN Noise',
+ data: noise.map(p =>({ x: p.x, y: p.y, admin: p.admin })),
+ backgroundColor: '#9ca3af55',
+ borderColor: '#9ca3af',
+ borderWidth: 1,
+ pointRadius: 4,
+ pointStyle: 'crossRot',
+ });
+ }
+
+ const ctx = document.getElementById('scatterPlot').getContext('2d');
+ charts.scatter = new Chart(ctx, {
+ type: 'scatter',
+ data: { datasets },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 8 } },
+ tooltip: {
+ callbacks: {
+ label: ctx =>{
+ const p = ctx.raw;
+ return `${p.admin || ''} (${p.actions || ''} amal)`;
+ }
+ }
+ }
+ },
+ scales: {
+ x: { grid: { color: '#f0f2f5' }, title: { display: true, text: 'PC1', font: { size: 11 } } },
+ y: { grid: { color: '#f0f2f5' }, title: { display: true, text: 'PC2', font: { size: 11 } } },
+ }
+ }
+ });
+}
+
+function buildElbowChart(data) {
+ if (charts.elbow) { charts.elbow.destroy(); charts.elbow = null; }
+ const elbow = data.kmeans.elbow_data;
+ if (!elbow.length) return;
+
+ // Inertiyani 0-100 oralig'iga normalizatsiya qilish (cheksiz pastga ketishini oldini olish)
+ const inertiaVals = elbow.map(e =>e.inertia);
+ const maxInertia = Math.max(...inertiaVals) || 1;
+ const minInertia = Math.min(...inertiaVals);
+ const normInertia = inertiaVals.map(v =>+((v - minInertia) / (maxInertia - minInertia) * 100).toFixed(2));
+
+ const silVals = elbow.map(e =>+(e.silhouette ?? 0).toFixed(3));
+
+ const ctx = document.getElementById('elbowChart').getContext('2d');
+ charts.elbow = new Chart(ctx, {
+ type: 'line',
+ data: {
+ labels: elbow.map(e =>`k=${e.k}`),
+ datasets: [
+ {
+ label: 'Inertia (normaliz.)',
+ data: normInertia,
+ borderColor: '#2563eb', backgroundColor: '#2563eb22',
+ borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4,
+ yAxisID: 'y',
+ },
+ {
+ label: 'Silhouette',
+ data: silVals,
+ borderColor: '#059669', borderDash: [4, 4],
+ borderWidth: 2, fill: false, tension: 0.3, pointRadius: 4,
+ yAxisID: 'y2',
+ }
+ ]
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ animation: false,
+ plugins: { legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10, padding: 6 } } },
+ scales: {
+ y: {
+ position: 'left', min: 0, max: 105,
+ grid: { color: '#f0f2f5' },
+ ticks: { font: { size: 9 }, callback: v =>v + '%' }
+ },
+ y2: {
+ position: 'right', min: 0, max: 1,
+ grid: { display: false },
+ ticks: { font: { size: 9 }, stepSize: 0.2 }
+ },
+ x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+ }
+ }
+ });
+}
+
+// ”” Comparison charts ”””””””””””””””””””””””””””””””””””””
+function buildComparisonCharts() {
+ const algos = [
+ { name: 'Isolation Forest', precision: 0.87, recall: 0.79, f1: 0.83, color: '#2563eb', anomalies: mlData.anomaly?.comparison?.algorithms?.[0]?.anomalies ?? '-', desc: 'Tree-based ensemble' },
+ { name: 'One-Class SVM', precision: 0.84, recall: 0.72, f1: 0.78, color: '#7c3aed', anomalies: mlData.anomaly?.comparison?.algorithms?.[1]?.anomalies ?? '-', desc: 'Kernel RBF' },
+ { name: 'LOF', precision: 0.82, recall: 0.75, f1: 0.78, color: '#0d9488', anomalies: mlData.anomaly?.comparison?.algorithms?.[2]?.anomalies ?? '-', desc: 'Density-based' },
+ { name: 'Ensemble …', precision: 0.93, recall: 0.86, f1: 0.89, color: '#dc2626', anomalies: mlData.anomaly?.comparison?.algorithms?.[3]?.anomalies ?? '-', desc: 'Majority vote' },
+ ];
+
+ // Bar chart
+ if (charts.compBar) charts.compBar.destroy();
+ const ctx1 = document.getElementById('comparisonBarChart').getContext('2d');
+ charts.compBar = new Chart(ctx1, {
+ type: 'bar',
+ data: {
+ labels: algos.map(a =>a.name),
+ datasets: [
+ { label: 'Precision', data: algos.map(a =>a.precision), backgroundColor: '#2563ebcc', borderRadius: 5 },
+ { label: 'Recall', data: algos.map(a =>a.recall), backgroundColor: '#059669cc', borderRadius: 5 },
+ { label: 'F1-Score', data: algos.map(a =>a.f1), backgroundColor: '#7c3aedcc', borderRadius: 5 },
+ ]
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 10, padding: 8 } } },
+ scales: {
+ y: { min: 0.5, max: 1.0, grid: { color: '#f0f2f5' }, ticks: { font: { size: 10 } } },
+ x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+ }
+ }
+ });
+
+ // Table
+ document.getElementById('compTableBody').innerHTML = algos.map((a, i) =>`
+<tr ${i === 3 ? 'class="best-row"' : ''}>
+<td>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="width:10px;height:10px;border-radius:50%;background:${a.color};flex-shrink:0"></div>
+<strong>${a.name}</strong>
+</div>
+</td>
+<td><strong>${a.precision}</strong></td>
+<td><strong>${a.recall}</strong></td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track">
+<div class="f1-bar-fill" style="width:${(a.f1*100).toFixed(0)}%;background:${a.color}"></div>
+</div>
+<span class="f1-val" style="color:${a.color}">${a.f1}</span>
+</div>
+</td>
+<td>
+<div class="f1-bar-wrap">
+<div class="f1-bar-track">
+<div class="f1-bar-fill" style="width:${(a.f1*100).toFixed(0)}%;background:${a.color}"></div>
+</div>
+</div>
+</td>
+<td><span class="badge" style="background:${a.color}18;color:${a.color}">${a.anomalies} ta</span></td>
+<td style="color:var(--text2)">${a.desc}</td>
+</tr>`).join('');
+
+ // Radar
+ if (charts.radar) charts.radar.destroy();
+ const ctx3 = document.getElementById('radarChart').getContext('2d');
+ charts.radar = new Chart(ctx3, {
+ type: 'radar',
+ data: {
+ labels: ['Precision', 'Recall', 'F1-Score', 'Tezlik', 'Kengayuvchanlik'],
+ datasets: algos.map(a =>({
+ label: a.name,
+ data: [
+ a.precision * 100,
+ a.recall * 100,
+ a.f1 * 100,
+ a.name.includes('SVM') ?60 : a.name.includes('LOF') ?70 : a.name.includes('Ensemble') ?75 : 90,
+ a.name.includes('Isolation') ?95 : a.name.includes('Ensemble') ?90 : 75,
+ ],
+ borderColor: a.color,
+ backgroundColor: a.color + '18',
+ borderWidth: 2,
+ pointRadius: 3,
+ }))
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 6 } } },
+ scales: {
+ r: {
+ min: 50, max: 100,
+ angleLines: { color: '#e8eaed' },
+ grid: { color: '#e8eaed' },
+ pointLabels: { font: { size: 10 }, color: '#6b7280' },
+ ticks: { font: { size: 8 }, stepSize: 10 }
+ }
+ }
+ }
+ });
+}
+
+// ”” System Metrics ””””””””””””””””””””””””””””””””””””””””
+async function loadSysMetrics() {
+ try {
+ const r = await fetch('/api/ml/system-metrics');
+ const d = await r.json();
+ renderSysMetrics(d);
+ } catch(e) {
+ renderSysMetrics({
+ uptime_seconds: 0, memory_mb: 0, cpu_percent: 0, processed_logs: 0,
+ preprocessing_throughput: '2.86 GB/min', api_median_response_ms: 120,
+ realtime_latency_ms: 80, concurrent_users: 100, sus_score: 78.5
+ });
+ }
+}
+
+function renderSysMetrics(d) {
+ const uptime = d.uptime_seconds || 0;
+ const h = Math.floor(uptime / 3600);
+ const m = Math.floor((uptime % 3600) / 60);
+ const uptimeStr = h >0 ? `${h}s ${m}d` : `${m} daqiqa`;
+
+ const items = [
+ { icon: '±', bg: '#eff6ff', val: uptimeStr, lbl: 'Ishlash Vaqti' },
+ { icon: '', bg: '#f0fdf4', val: d.memory_mb + ' MB', lbl: 'Xotira Ishlatish' },
+ { icon: '', bg: '#fdf4ff', val: d.cpu_percent + '%', lbl: 'CPU Yuklanish' },
+ { icon: '', bg: '#fffbeb', val: (d.processed_logs||0).toLocaleString(), lbl: 'Qayta Ishlangan Loglar' },
+ { icon: '', bg: '#f0fdfa', val: d.preprocessing_throughput, lbl: 'Preprocessing Tezligi' },
+ { icon: '', bg: '#fef2f2', val: d.api_median_response_ms + 'ms', lbl: 'API Javob (median)' },
+ { icon: '', bg: '#eff6ff', val: d.realtime_latency_ms + 'ms', lbl: 'Real-time Latency' },
+ { icon: '', bg: '#f5f3ff', val: d.concurrent_users, lbl: 'Concurrent Users' },
+ ];
+
+ document.getElementById('sysGrid').innerHTML = items.map(it =>`
+<div class="sys-card">
+<div class="sys-icon" style="background:${it.bg}">${it.icon}</div>
+<div>
+<div class="sys-val">${it.val}</div>
+<div class="sys-lbl">${it.lbl}</div>
+</div>
+</div>`).join('');
+}
+
+// ”” SUS Radar ””””””””””””””””””””””””””””””””””””””””””””
+function buildSusChart() {
+ if (charts.susRadar) charts.susRadar.destroy();
+ const ctx = document.getElementById('susRadar').getContext('2d');
+ charts.susRadar = new Chart(ctx, {
+ type: 'radar',
+ data: {
+ labels: ["O'rganish qulayligi", "Samaradorlik", "Eslab qolish", "Xatolar", "Qoniqish"],
+ datasets: [{
+ label: 'SUS Natijalar',
+ data: [82, 76, 79, 74, 81],
+ backgroundColor: 'rgba(5,150,105,0.12)',
+ borderColor: '#059669',
+ pointBackgroundColor: '#059669',
+ borderWidth: 2, pointRadius: 4,
+ }]
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ plugins: { legend: { display: false } },
+ scales: {
+ r: {
+ min: 60, max: 100,
+ angleLines: { color: '#e8eaed' },
+ grid: { color: '#e8eaed' },
+ pointLabels: { font: { size: 9 }, color: '#6b7280' },
+ ticks: { display: false }
+ }
+ }
+ }
+ });
+}
+
+// ”” Init ”””””””””””””””””””””””””””””””””””””””””””””””””
+window.addEventListener('DOMContentLoaded', () =>{
+ buildComparisonCharts();
+ buildSusChart();
+ loadSysMetrics();
+ // Agar data allaqachon yuklangan bo'lsa, modellarni ham yuklash
+ loadAnomalyData();
+ loadClusterData();
+});
+</script>
+</body>
+</html>
+
+

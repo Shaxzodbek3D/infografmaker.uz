@@ -1,0 +1,1070 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEMIS Log Tahlili va Infografika</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+ :root {
+ /* Asosiy ranglar */
+ --primary: #6c5ce7; /* Asosiy binafsha */
+ --primary-dark: #5849be;
+ --secondary: #a29bfe;
+ --accent: #00cec9; /* Yashil-moviy */
+ 
+ /* Status ranglari */
+ --success: #00b894;
+ --warning: #fdcb6e;
+ --danger: #ff7675;
+ --info: #74b9ff;
+ 
+ /* Matn ranglari */
+ --text-main: #2d3436;
+ --text-light: #636e72;
+ --text-muted: #b2bec3;
+
+ /* Glassmorphism (Shisha) Effektlari */
+ --glass-bg: rgba(255, 255, 255, 0.75);
+ --glass-border: 1px solid rgba(255, 255, 255, 0.9);
+ --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+ 
+ /* Card (Karta) stillari */
+ --card-bg: #ffffff;
+ --card-radius: 20px;
+ --card-shadow: 0 4px 15px rgba(0,0,0,0.03);
+ --card-hover: translateY(-5px) shadow(0 15px 30px rgba(0,0,0,0.1));
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+ body {
+ background-color: #dfe6e9;
+ background-image: 
+ radial-gradient(at 10% 10%, rgba(108, 92, 231, 0.2) 0px, transparent 50%),
+ radial-gradient(at 90% 90%, rgba(0, 206, 201, 0.2) 0px, transparent 50%);
+ min-height: 100vh;
+ padding: 20px;
+ color: var(--text-main);
+ }
+
+ .container { max-width: 1440px; margin: 0 auto; }
+ 
+ /* Barcha katta bloklar uchun shisha effekti */
+ header, .filters-container, .anomalies-container, .risk-container, 
+ .ai-insights-container, .predictions-container, .recommendations-container, 
+ .profiles-container, .roles-container, .sequences-container, .data-movement-container {
+ background: var(--glass-bg);
+ backdrop-filter: blur(16px);
+ -webkit-backdrop-filter: blur(16px);
+ border: var(--glass-border);
+ border-radius: 24px;
+ box-shadow: var(--glass-shadow);
+ padding: 30px;
+ margin-bottom: 30px;
+ transition: 0.3s;
+ }
+
+ h1 {
+ font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;
+ background: linear-gradient(45deg, var(--primary), var(--accent));
+ -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+ }
+ 
+ h3 { 
+ color: var(--text-main); margin-bottom: 25px; font-size: 1.4rem; 
+ display: flex; align-items: center; gap: 10px; 
+ border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px;
+ }
+
+ /* Inputlar */
+ input, select {
+ width: 100%; padding: 12px 20px;
+ background: #fff; border: 2px solid transparent; border-radius: 12px;
+ color: var(--text-main); outline: none; transition: 0.3s;
+ box-shadow: var(--card-shadow);
+ font-size: 0.95rem;
+ }
+ input:focus, select:focus {
+ border-color: var(--primary);
+ box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+ }
+
+ /* Tugmalar */
+ button {
+ background: var(--primary); color: white; border: none;
+ padding: 12px 25px; border-radius: 50px; cursor: pointer;
+ font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;
+ transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+ display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+ }
+ button:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4); }
+ 
+ button.secondary { background: white; color: var(--primary); border: 2px solid transparent; }
+ button.secondary:hover { background: #f1f2f6; color: var(--primary-dark); }
+ button.filter-btn { width: 100%; margin-top: 5px; }
+
+ 
+ /* Header Controls */
+ .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+ .data-source-selector {
+ background: rgba(255,255,255,0.5); padding: 8px 20px; border-radius: 50px;
+ display: flex; gap: 20px; align-items: center; border: 1px solid rgba(255,255,255,0.8);
+ }
+ .data-source-selector label { cursor: pointer; font-weight: 500; transition: 0.3s; display: flex; align-items: center; gap: 6px;}
+ .data-source-selector label:hover { color: var(--primary); }
+ 
+ .source-status { padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+ .source-status.active { background: rgba(0, 184, 148, 0.15); color: #009476; }
+ .source-status.loading { background: rgba(253, 203, 110, 0.15); color: #e1b12c; }
+ .source-status.error { background: rgba(255, 118, 117, 0.15); color: #d63031; }
+
+ .actions { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+
+ /* Statistika Grid */
+ .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 30px; }
+ .stat-card {
+ background: #fff; padding: 25px; border-radius: var(--card-radius);
+ box-shadow: var(--card-shadow); position: relative; overflow: hidden;
+ transition: 0.3s; text-align: center;
+ }
+ .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+ .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1.2; }
+ .stat-label { color: var(--text-light); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; }
+
+ /* Charts */
+ .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 30px; margin-bottom: 30px; }
+ .chart-container { background: #fff; padding: 25px; border-radius: var(--card-radius); box-shadow: var(--card-shadow); }
+ .chart-title { font-weight: 600; color: var(--text-main); margin-bottom: 20px; font-size: 1.1rem; }
+
+ 
+ .filter-grid, .anomalies-box, .insights-grid, .predictions-grid, 
+ .recommendations-list, .profiles-grid, .roles-grid, .sequences-grid, .movement-list {
+ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;
+ }
+
+ /* Karta Asosi (Barcha kichik bloklar uchun) */
+ .anomaly-card, .insight-card, .prediction-card, .recommendation-card, 
+ .profile-card, .role-card, .sequence-card, .movement-item, .result-item {
+ background: #fff; padding: 20px; border-radius: 16px;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+ border: 1px solid rgba(0,0,0,0.04);
+ transition: 0.3s; position: relative;
+ }
+ .anomaly-card:hover, .insight-card:hover, .prediction-card:hover, .profile-card:hover {
+ transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+ }
+
+ /* Rangli Identifikatorlar (Border Left) */
+ .anomaly-card { border-left: 5px solid var(--danger); background: linear-gradient(to right, #fff5f5, #fff); }
+ .anomaly-card.medium { border-left-color: var(--warning); background: linear-gradient(to right, #fffbf0, #fff); }
+ 
+ .insight-card { border-left: 5px solid var(--secondary); }
+ .insight-card.warning { border-left-color: var(--warning); }
+ .insight-card.info { border-left-color: var(--info); }
+ 
+ .prediction-card { border-left: 5px solid var(--danger); }
+ .recommendation-card { border-left: 5px solid var(--success); }
+ .role-card { border-left: 5px solid var(--info); }
+ .movement-item { border-left: 5px solid var(--accent); }
+ .sequence-card { border-left: 5px solid var(--danger); }
+ .profile-card { border-left: 5px solid var(--primary); }
+
+ /* Karta ichidagi matnlar */
+ .anomaly-type, .insight-title, .prediction-risk, .rec-title, .profile-header, .movement-admin {
+ font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);
+ }
+ .anomaly-desc, .insight-desc, .role-description, .sequence-info {
+ font-size: 0.9rem; color: var(--text-light); line-height: 1.5;
+ }
+
+ /* Badges (Yorliqlar) */
+ .confidence-badge, .rec-priority, .role-badge, .tag {
+ display: inline-block; padding: 4px 10px; border-radius: 6px;
+ font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-top: 8px;
+ }
+ .confidence-high, .priority-high, .risk-high { background: rgba(255, 118, 117, 0.15); color: #d63031; }
+ .confidence-medium, .priority-medium, .risk-medium { background: rgba(253, 203, 110, 0.15); color: #e1b12c; }
+ .role-badge { background: rgba(116, 185, 255, 0.15); color: #0984e3; }
+
+ 
+ .risk-table, .table-responsive { overflow-x: auto; border-radius: 12px; }
+ table { width: 100%; border-collapse: collapse; background: #fff; }
+ th { 
+ background: #f8f9fa; color: var(--text-light); padding: 16px; 
+ text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase;
+ }
+ td { padding: 16px; border-bottom: 1px solid #f1f2f6; color: var(--text-main); font-size: 0.95rem; }
+ tr:last-child td { border-bottom: none; }
+ tr:hover td { background: #fafafa; }
+
+ /* Risk Bar */
+ .risk-score-bar { display: flex; align-items: center; gap: 12px; }
+ .risk-bar { width: 100px; height: 8px; background: #dfe6e9; border-radius: 10px; overflow: hidden; }
+ .risk-fill { height: 100%; border-radius: 10px; }
+
+ 
+ .loading { display: none; text-align: center; padding: 30px; }
+ .spinner {
+ border: 3px solid rgba(108, 92, 231, 0.1); border-top: 3px solid var(--primary);
+ border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;
+ }
+ @keyframes spin { 100% { transform: rotate(360deg); } }
+ 
+ .error {
+ background: #ffeaa7; color: #d63031; padding: 15px; border-radius: 12px;
+ margin: 20px 0; display: none; text-align: center; font-weight: 500;
+ }
+ .active { display: block; }
+ 
+ footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 0.9rem; }
+
+ /* Mobile */
+ @media (max-width: 768px) {
+ .header-content { flex-direction: column; align-items: flex-start; }
+ .data-source-selector { width: 100%; justify-content: space-between; margin-top: 15px; }
+ .charts-grid { grid-template-columns: 1fr; }
+ .stat-value { font-size: 2rem; }
+ }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="header-content">
+<div>
+<h1>HEMIS Log Tahlili va Infografika Tizimi</h1>
+<p class="subtitle">Hemis.buxdu.uz tizimining loglarini real vaqtda tahlil qilish</p>
+</div>
+<div class="data-source-selector">
+<label>
+<input type="radio" name="dataSource" value="file" checked>
+ File
+</label>
+<label>
+<input type="radio" name="dataSource" value="api">
+ BUXDU API
+</label>
+<label>
+<input type="radio" name="dataSource" value="combined">
+ Birlashtirilgan
+</label>
+<span id="sourceStatus" class="source-status active">Tayyor</span>
+</div>
+</div>
+</header>
+ 
+<div class="actions">
+<button onclick="loadDataSource()">Ma'lumot Manbasini Yangilash</button>
+<button onclick="loadStats()">Yangilash</button>
+<button class="secondary" onclick="exportPDF()">PDF ga Eksport Qilish</button>
+<button class="secondary" onclick="refreshCharts()">Grafiklar Yangilash</button>
+</div>
+ 
+<!-- FILTERS SECTION -->
+<div class="filters-container">
+<h3>Loglarni Filtrlash</h3>
+<div class="filter-grid">
+<input type="text" id="filterAdmin" placeholder="Admin nomini izlash..." class="filter-input">
+<input type="text" id="filterIP" placeholder="IP manzil..." class="filter-input">
+<select id="filterAction" class="filter-input">
+<option value="">Amal turini tanlang</option>
+<option value="LOGIN">LOGIN</option>
+<option value="VIEW">VIEW</option>
+<option value="UPDATE">UPDATE</option>
+</select>
+<input type="date" id="filterStartDate" class="filter-input">
+<input type="date" id="filterEndDate" class="filter-input">
+<button onclick="applyFilters()" class="filter-btn">Filtrlash</button>
+</div>
+<div id="filterResults" class="filter-results"></div>
+</div>
+ 
+<!-- ANOMALIES SECTION -->
+<div class="anomalies-container">
+<h3>Notekis Faollik</h3>
+<div id="anomaliesBox" class="anomalies-box"></div>
+</div>
+ 
+<!-- RISK SCORES SECTION -->
+<div class="risk-container">
+<h3>Admin Xavf Ballar±</h3>
+<div id="riskScores" class="risk-table"></div>
+</div>
+ 
+<!-- AI INSIGHTS SECTION -->
+<div class="ai-insights-container">
+<h3>Suniy Intellekt Insights</h3>
+<div id="aiInsights" class="insights-grid"></div>
+</div>
+ 
+<!-- AI PREDICTIONS SECTION -->
+<div class="predictions-container">
+<h3>Xavf Proqnozlari</h3>
+<div id="predictions" class="predictions-grid"></div>
+</div>
+ 
+<!-- AI RECOMMENDATIONS SECTION -->
+<div class="recommendations-container">
+<h3>AI Tavsiyalari</h3>
+<div id="recommendations" class="recommendations-list"></div>
+</div>
+ 
+<!-- ADMIN PROFILES SECTION -->
+<div class="profiles-container">
+<h3>Admin Profillar va Rol Analizi</h3>
+<div class="profile-filters">
+<input type="text" id="adminSearch" placeholder="Admin nomini izlash..." class="filter-input" style="width: 300px;">
+<button onclick="loadAdminProfiles()" class="filter-btn">Profil Yuklash</button>
+</div>
+<div id="adminProfiles" class="profiles-grid"></div>
+</div>
+ 
+<!-- USER ROLES SECTION -->
+<div class="roles-container">
+<h3>Detected User Roles</h3>
+<div id="userRoles" class="roles-grid"></div>
+</div>
+ 
+<!-- SUSPICIOUS SEQUENCES SECTION -->
+<div class="sequences-container">
+<h3>Suspekt Amal Ketma-ketliklari</h3>
+<div id="suspiciousSequences" class="sequences-grid"></div>
+</div>
+ 
+<div class="error" id="errorMsg"></div>
+<div class="loading" id="loading">
+<div class="spinner"></div>
+<p>Yuklanmoqda...</p>
+</div>
+ 
+<div class="stats-grid" id="statsContainer">
+<!-- Stats bu yerga yuklaniadi -->
+</div>
+ 
+<div class="charts-grid" id="chartsContainer">
+<div class="chart-container">
+<div class="chart-title">Admin Faolligi</div>
+<canvas id="adminChart"></canvas>
+</div>
+<div class="chart-container">
+<div class="chart-title">Amal Turlarining Tarqatilishi</div>
+<canvas id="actionChart"></canvas>
+</div>
+<div class="chart-container">
+<div class="chart-title">IP Manzilar Tahlili</div>
+<canvas id="ipChart"></canvas>
+</div>
+<div class="chart-container">
+<div class="chart-title">Vaqt Bo'yicha Loglar Soni</div>
+<canvas id="timelineChart"></canvas>
+</div>
+</div>
+ 
+<footer>
+<p>(c) 2024 HEMIS Log Tahlili Tizimi | Yangilangan:<span id="lastUpdate">-</span></p>
+</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+ let charts = {};
+
+ async function loadDataSource() {
+ const source = document.querySelector('input[name="dataSource"]:checked').value;
+ const statusEl = document.getElementById('sourceStatus');
+ 
+ statusEl.textContent = 'Yuklanmoqda...';
+ statusEl.className = 'source-status loading';
+ 
+ try {
+ let endpoint = '';
+ if (source === 'api') {
+ endpoint = '/api/buxdu/fetch-data';
+ } else if (source === 'combined') {
+ endpoint = '/api/buxdu/combined-analysis';
+ } else {
+ endpoint = '/api/data-source';
+ }
+ 
+ const response = await fetch(endpoint, {
+ method: endpoint === '/api/data-source' ?'GET' : 'POST',
+ headers: {
+ 'Content-Type': 'application/json'
+ }
+ });
+ 
+ const result = await response.json();
+ 
+ if (response.ok) {
+ statusEl.textContent = `OK ${result.data_source || source} - ${result.rows_fetched || result.total_rows} satir`;
+ statusEl.className = 'source-status active';
+ 
+ // Barcha tahlillarni qayta yuklash
+ setTimeout(() =>{
+ loadStats();
+ loadAdminChart();
+ loadActionChart();
+ loadIpChart();
+ loadAnomalies();
+ loadRiskScores();
+ }, 500);
+ } else {
+ statusEl.textContent = 'OK— Xato';
+ statusEl.className = 'source-status error';
+ showError(result.error || 'Ma\'lumot yuklanishda xato');
+ }
+ } catch (error) {
+ statusEl.textContent = 'OK— Ulanish xatosi';
+ statusEl.className = 'source-status error';
+ showError('Xato: ' + error.message);
+ }
+ }
+
+ async function checkDataSourceStatus() {
+ try {
+ const response = await fetch('/api/data-source');
+ const data = await response.json();
+ 
+ document.querySelector(`input[name="dataSource"][value="${data.data_source}"]`).checked = true;
+ const statusEl = document.getElementById('sourceStatus');
+ statusEl.textContent = `OK ${data.data_source} - ${data.total_rows} satir`;
+ statusEl.className = 'source-status active';
+ } catch (error) {
+ console.error('Status check error:', error);
+ }
+ }
+
+ async function loadStats() {
+ showLoading(true);
+ try {
+ const response = await fetch('/api/stats');
+ const data = await response.json();
+ 
+ const html = `
+<div class="stat-card">
+<div class="stat-value">${data.total_logs.toLocaleString()}</div>
+<div class="stat-label">Jami Loglar</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">${data.unique_admins}</div>
+<div class="stat-label">Adminlar Soni</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">${data.unique_ips}</div>
+<div class="stat-label">IP Manzilar</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">${data.unique_actions}</div>
+<div class="stat-label">Amal Turlar±</div>
+</div>
+ `;
+ 
+ document.getElementById('statsContainer').innerHTML = html;
+ document.getElementById('lastUpdate').textContent = new Date().toLocaleString('uz-UZ');
+ 
+ showLoading(false);
+ } catch (error) {
+ showError('Statistika yuklanishda xato: ' + error.message);
+ }
+ }
+
+ async function loadAdminChart() {
+ try {
+ const response = await fetch('/api/admin-activity');
+ const data = await response.json();
+ 
+ if (charts.adminChart) charts.adminChart.destroy();
+ 
+ const ctx = document.getElementById('adminChart').getContext('2d');
+ charts.adminChart = new Chart(ctx, {
+ type: 'bar',
+ data: {
+ labels: data.labels.slice(0, 10),
+ datasets: [{
+ label: 'Loglar Soni',
+ data: data.data.slice(0, 10),
+ backgroundColor: '#667eea',
+ borderColor: '#667eea',
+ borderWidth: 1
+ }]
+ },
+ options: {
+ responsive: true,
+ plugins: {
+ legend: { display: false }
+ },
+ scales: {
+ y: { beginAtZero: true }
+ }
+ }
+ });
+ } catch (error) {
+ console.error('Admin chart error:', error);
+ }
+ }
+
+ async function loadActionChart() {
+ try {
+ const response = await fetch('/api/action-distribution');
+ const data = await response.json();
+ 
+ if (charts.actionChart) charts.actionChart.destroy();
+ 
+ const ctx = document.getElementById('actionChart').getContext('2d');
+ charts.actionChart = new Chart(ctx, {
+ type: 'doughnut',
+ data: {
+ labels: data.labels,
+ datasets: [{
+ data: data.data,
+ backgroundColor: [
+ '#667eea', '#764ba2', '#f093fb', '#4facfe',
+ '#43e97b', '#fa709a', '#30cfd0', '#ffa400'
+ ]
+ }]
+ },
+ options: {
+ responsive: true,
+ plugins: {
+ legend: { position: 'bottom' }
+ }
+ }
+ });
+ } catch (error) {
+ console.error('Action chart error:', error);
+ }
+ }
+
+ async function loadIpChart() {
+ try {
+ const response = await fetch('/api/ip-analysis');
+ const data = await response.json();
+ 
+ if (charts.ipChart) charts.ipChart.destroy();
+ 
+ const ctx = document.getElementById('ipChart').getContext('2d');
+ charts.ipChart = new Chart(ctx, {
+ type: 'bar',
+ data: {
+ labels: data.labels,
+ datasets: [{
+ label: 'Kirish Soni',
+ data: data.data,
+ backgroundColor: '#764ba2',
+ borderColor: '#764ba2',
+ borderWidth: 1
+ }]
+ },
+ options: {
+ indexAxis: 'y',
+ responsive: true,
+ plugins: {
+ legend: { display: false }
+ },
+ scales: {
+ x: { beginAtZero: true }
+ }
+ }
+ });
+ } catch (error) {
+ console.error('IP chart error:', error);
+ }
+ }
+
+ async function loadTimelineChart() {
+ try {
+ const response = await fetch('/api/timeline');
+ const data = await response.json();
+ 
+ if (charts.timelineChart) charts.timelineChart.destroy();
+ 
+ const ctx = document.getElementById('timelineChart').getContext('2d');
+ charts.timelineChart = new Chart(ctx, {
+ type: 'line',
+ data: {
+ labels: data.labels,
+ datasets: [{
+ label: 'Loglar Soni',
+ data: data.data,
+ borderColor: '#667eea',
+ backgroundColor: 'rgba(102, 126, 234, 0.1)',
+ borderWidth: 2,
+ fill: true,
+ tension: 0.4
+ }]
+ },
+ options: {
+ responsive: true,
+ plugins: {
+ legend: { display: false }
+ },
+ scales: {
+ y: { beginAtZero: true }
+ }
+ }
+ });
+ } catch (error) {
+ console.error('Timeline chart error:', error);
+ }
+ }
+
+ async function refreshCharts() {
+ showLoading(true);
+ await loadAdminChart();
+ await loadActionChart();
+ await loadIpChart();
+ await loadTimelineChart();
+ showLoading(false);
+ }
+
+ async function exportPDF() {
+ showLoading(true);
+ try {
+ const response = await fetch('/api/export-pdf');
+ const blob = await response.blob();
+ const url = window.URL.createObjectURL(blob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = `HEMIS_Report_${new Date().getTime()}.pdf`;
+ document.body.appendChild(a);
+ a.click();
+ window.URL.revokeObjectURL(url);
+ document.body.removeChild(a);
+ } catch (error) {
+ showError('PDF eksportda xato: ' + error.message);
+ }
+ showLoading(false);
+ }
+
+ function showLoading(show) {
+ document.getElementById('loading').classList.toggle('active', show);
+ }
+
+ function showError(message) {
+ const errorEl = document.getElementById('errorMsg');
+ errorEl.textContent = message;
+ errorEl.classList.add('active');
+ setTimeout(() =>errorEl.classList.remove('active'), 5000);
+ }
+
+ // Sahifa yuklanganda
+ document.addEventListener('DOMContentLoaded', () =>{
+ loadStats();
+ refreshCharts();
+ loadAnomalies();
+ loadRiskScores();
+ loadAIInsights();
+ loadPredictions();
+ loadRecommendations();
+ loadAdminProfiles();
+ loadUserRoles();
+ loadSuspiciousSequences();
+ loadDataMovement();
+ });
+ 
+ async function applyFilters() {
+ showLoading(true);
+ try {
+ const filters = {
+ admin: document.getElementById('filterAdmin').value,
+ ip: document.getElementById('filterIP').value,
+ action: document.getElementById('filterAction').value,
+ start_date: document.getElementById('filterStartDate').value,
+ end_date: document.getElementById('filterEndDate').value
+ };
+ 
+ const response = await fetch('/api/filter', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify(filters)
+ });
+ 
+ const data = await response.json();
+ 
+ let html = `<h4>Natijalar: ${data.total_filtered} ta log topildi</h4>`;
+ 
+ if (data.data && data.data.length >0) {
+ data.data.slice(0, 20).forEach(log =>{
+ html += `
+<div class="result-item">
+<strong>${log['Admin nomi']}</strong>- 
+ ${log['Amal']} 
+<br><small>${log['IP']} | ${log['Yaratilgan']}</small>
+</div>
+ `;
+ });
+ }
+ 
+ document.getElementById('filterResults').innerHTML = html;
+ showLoading(false);
+ } catch (error) {
+ showError('Filter qo\'llanishda xato: ' + error.message);
+ }
+ }
+ 
+ async function loadAnomalies() {
+ try {
+ const response = await fetch('/api/anomalies');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.anomalies && data.anomalies.length >0) {
+ data.anomalies.forEach(anomaly =>{
+ const severity = anomaly.severity || 'low';
+ const severityClass = severity === 'high' ?'' : 'medium';
+ 
+ html += `
+<div class="anomaly-card ${severityClass}">
+<div class="anomaly-type">${anomaly.type}</div>
+<div class="anomaly-desc">${anomaly.description}</div>
+ ${anomaly.severity ? `<small>Xavf: ${anomaly.severity}</small>` : ''}
+</div>
+ `;
+ });
+ } else {
+ html = '<p style="color: #2ecc71;">Hech qanday notekis faollik topilmadi!</p>';
+ }
+ 
+ document.getElementById('anomaliesBox').innerHTML = html;
+ } catch (error) {
+ console.error('Anomalies error:', error);
+ }
+ }
+ 
+ async function loadRiskScores() {
+ try {
+ const response = await fetch('/api/risk-scores');
+ const data = await response.json();
+ 
+ let html = `
+<table>
+<tr>
+<th>Admin Nomi</th>
+<th>Xavf Bali</th>
+<th>Jami Amallar</th>
+<th>IP Manzillar</th>
+<th>Noto'g'ri Urinishlar</th>
+</tr>
+ `;
+ 
+ if (data.scores && data.scores.length >0) {
+ data.scores.slice(0, 15).forEach(score =>{
+ const riskColor = score.risk_score >60 ?'#e74c3c' : 
+ score.risk_score >30 ?'#f39c12' : '#2ecc71';
+ 
+ html += `
+<tr>
+<td><strong>${score.admin}</strong></td>
+<td>
+<div class="risk-score-bar">
+<div class="risk-bar">
+<div class="risk-fill" style="width: ${score.risk_score}%; background-color: ${riskColor};"></div>
+</div>
+<span>${score.risk_score}/100</span>
+</div>
+</td>
+<td>${score.total_actions}</td>
+<td>${score.unique_ips}</td>
+<td>${score.failed_attempts}</td>
+</tr>
+ `;
+ });
+ }
+ 
+ html += '</table>';
+ document.getElementById('riskScores').innerHTML = html;
+ } catch (error) {
+ console.error('Risk scores error:', error);
+ }
+ }
+ 
+ async function loadAIInsights() {
+ try {
+ const response = await fetch('/api/ai/insights');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.insights && data.insights.length >0) {
+ data.insights.slice(0, 6).forEach(insight =>{
+ const cardClass = insight.severity === 'warning' ?'warning' : insight.severity === 'high' ?'' : 'info';
+ 
+ html += `
+<div class="insight-card ${cardClass}">
+<div class="insight-title">${insight.title}</div>
+<div class="insight-desc">${insight.description}</div>
+<div class="insight-rec"><strong>Tavsiya:</strong>${insight.recommendation}</div>
+</div>
+ `;
+ });
+ }
+ 
+ document.getElementById('aiInsights').innerHTML = html;
+ } catch (error) {
+ console.error('AI insights error:', error);
+ }
+ }
+ 
+ async function loadPredictions() {
+ try {
+ const response = await fetch('/api/ai/predictions');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.predictions && data.predictions.length >0) {
+ data.predictions.forEach(pred =>{
+ const confClass = pred.confidence === 'high' ?'confidence-high' : 'confidence-medium';
+ 
+ html += `
+<div class="prediction-card">
+<div class="prediction-risk">${pred.risk.replace(/_/g, ' ').toUpperCase()}</div>
+<div class="prediction-msg">${pred.message}</div>
+<div class="prediction-action"><strong>Harakat:</strong>${pred.suggested_action}</div>
+<span class="confidence-badge ${confClass}">${pred.confidence.toUpperCase()}</span>
+</div>
+ `;
+ });
+ } else {
+ html = '<p style="color: #27ae60;">Xavf signallari topilmadi!</p>';
+ }
+ 
+ document.getElementById('predictions').innerHTML = html;
+ } catch (error) {
+ console.error('Predictions error:', error);
+ }
+ }
+ 
+ async function loadRecommendations() {
+ try {
+ const response = await fetch('/api/ai/recommendations');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.recommendations && data.recommendations.length >0) {
+ data.recommendations.forEach(rec =>{
+ const cardClass = rec.priority === 'high' ?'high' : '';
+ const priorityClass = rec.priority === 'high' ?'priority-high' : 'priority-medium';
+ 
+ const stepsHtml = rec.steps ? `
+<div class="rec-steps">
+<ol>
+ ${rec.steps.map(step =>`<li>${step}</li>`).join('')}
+</ol>
+</div>
+ ` : '';
+ 
+ html += `
+<div class="recommendation-card ${cardClass}">
+<div class="rec-header">
+<div class="rec-title">${rec.action}</div>
+<span class="rec-priority ${priorityClass}">${rec.priority.toUpperCase()}</span>
+</div>
+<div class="rec-reason"><strong>Sabab:</strong>${rec.reason}</div>
+ ${stepsHtml}
+</div>
+ `;
+ });
+ }
+ 
+ document.getElementById('recommendations').innerHTML = html;
+ } catch (error) {
+ console.error('Recommendations error:', error);
+ }
+ }
+ 
+ async function loadAdminProfiles() {
+ showLoading(true);
+ try {
+ const searchTerm = document.getElementById('adminSearch').value;
+ 
+ // Birinchi 10 adminni olamiz
+ const response = await fetch('/api/stats');
+ const stats = await response.json();
+ 
+ let adminsList = [];
+ // Biz direct har bir adminni yuklashimiz kerak
+ // Shunchaki top 10 ni ko'rsatamiz
+ 
+ let html = '<p>Adminlar profillari yuklanmoqda...</p>';
+ 
+ // Hardcoded top admins or make a new endpoint
+ const profileResponse = await fetch('/api/behavior/user-roles');
+ const roles = await profileResponse.json();
+ 
+ html = '';
+ let count = 0;
+ 
+ for (const [admin, role] of Object.entries(roles).slice(0, 8)) {
+ if (!searchTerm || admin.toLowerCase().includes(searchTerm.toLowerCase())) {
+ html += `
+<div class="profile-card">
+<div class="profile-header">${admin}</div>
+<div class="profile-info">
+<strong>Rol:</strong>${role.inferred_role}<br>
+<strong>Tavsif:</strong>${role.description}
+</div>
+<div class="profile-actions">
+ ${Object.entries(role.primary_actions).slice(0, 4).map(([action, count]) =>`
+<div class="profile-action-item">
+<strong>${action}</strong>
+<span>${count} marta</span>
+</div>
+ `).join('')}
+</div>
+<button onclick="viewAdminDetail('${admin}')" style="width: 100%; margin-top: 10px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Batafsil</button>
+</div>
+ `;
+ count++;
+ }
+ }
+ 
+ if (html === '') html = '<p>Admin topilmadi</p>';
+ 
+ document.getElementById('adminProfiles').innerHTML = html;
+ showLoading(false);
+ } catch (error) {
+ console.error('Admin profiles error:', error);
+ showLoading(false);
+ }
+ }
+ 
+ async function loadUserRoles() {
+ try {
+ const response = await fetch('/api/behavior/user-roles');
+ const roles = await response.json();
+ 
+ let html = '';
+ 
+ let roleCount = 0;
+ for (const [admin, roleInfo] of Object.entries(roles)) {
+ if (roleCount< 12) {
+ html += `
+<div class="role-card">
+<div class="role-badge">${roleInfo.inferred_role}</div>
+<div style="font-weight: bold; margin-bottom: 8px;">${admin}</div>
+<div class="role-description">${roleInfo.description}</div>
+<div class="role-actions">
+<strong>Asosiy amallar:</strong><br>
+ ${Object.keys(roleInfo.primary_actions).join(', ')}
+</div>
+</div>
+ `;
+ roleCount++;
+ }
+ }
+ 
+ document.getElementById('userRoles').innerHTML = html;
+ } catch (error) {
+ console.error('User roles error:', error);
+ }
+ }
+ 
+ async function loadSuspiciousSequences() {
+ try {
+ const response = await fetch('/api/suspicious-sequences');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.suspicious_sequences && data.suspicious_sequences.length >0) {
+ data.suspicious_sequences.forEach(seq =>{
+ html += `
+<div class="sequence-card">
+<div class="sequence-pattern">${seq.pattern}</div>
+<div class="sequence-info">
+<strong>Admin:</strong>${seq.admin}<br>
+<strong>Xavf:</strong><span style="color: #e74c3c; font-weight: bold;">${seq.risk.toUpperCase()}</span>
+</div>
+<div class="sequence-info">${seq.description}</div>
+</div>
+ `;
+ });
+ } else {
+ html = '<p style="color: #27ae60;">Suspekt ketma-ketlik topilmadi!</p>';
+ }
+ 
+ document.getElementById('suspiciousSequences').innerHTML = html;
+ } catch (error) {
+ console.error('Suspicious sequences error:', error);
+ }
+ }
+ 
+ async function loadDataMovement() {
+ try {
+ const response = await fetch('/api/behavior/data-movement');
+ const data = await response.json();
+ 
+ let html = '';
+ 
+ if (data.patterns && data.patterns.length >0) {
+ data.patterns.forEach(pattern =>{
+ const riskClass = pattern.risk_assessment.risk_level === 'high' ?'risk-high' : 'risk-medium';
+ 
+ html += `
+<div class="movement-item">
+<div class="movement-admin">${pattern.admin}</div>
+<div class="movement-stats">
+<div class="stat-box">
+<strong>${pattern.imports}</strong>
+ IMPORT
+</div>
+<div class="stat-box">
+<strong>${pattern.exports}</strong>
+ EXPORT
+</div>
+<div class="stat-box">
+<strong>${pattern.downloads}</strong>
+ DOWNLOAD
+</div>
+<div class="stat-box">
+<strong>${pattern.uploads}</strong>
+ UPLOAD
+</div>
+</div>
+<div class="movement-risk ${riskClass}">
+<strong>Risk:</strong>${pattern.risk_assessment.risk_level.toUpperCase()} (${pattern.risk_assessment.risk_score}/100)<br>
+ ${pattern.risk_assessment.factors.join(', ')}
+</div>
+</div>
+ `;
+ });
+ } else {
+ html = '<p style="color: #27ae60;">Ma\'lumot harakati detektor topilmadi</p>';
+ }
+ 
+ document.getElementById('dataMovement').innerHTML = html;
+ } catch (error) {
+ console.error('Data movement error:', error);
+ }
+ }
+ 
+ function viewAdminDetail(adminName) {
+ alert(`${adminName} ning batafsil profili (Feature tez orada)`);
+ }
+ 
+ // Sahifa yuklanganda boshlash
+ window.addEventListener('DOMContentLoaded', () =>{
+ checkDataSourceStatus();
+ loadStats();
+ loadAdminChart();
+ loadActionChart();
+ loadIpChart();
+ loadAnomalies();
+ loadRiskScores();
+ loadAIInsights();
+ loadAdminProfiles();
+ loadUserRoles();
+ loadSuspiciousSequences();
+ loadDataMovement();
+ });
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,99 @@
+HEMIS Log Tahlili va Infografika Tizimi — Batafsil Tushuntirish
+
+1) Tizim nima qiladi?
+Ushbu tizim HEMIS (yoki shunga o‘xshash) log fayllarni avtomatik tahlil qiladi. Maqsad:
+- Adminlar faolligini aniqlash
+- Xavfli yoki shubhali xatti‑harakatlarni topish
+- Ma’lumotlar harakati (IMPORT/EXPORT/UPLOAD/DOWNLOAD) riskini baholash
+- Tizim barqarorlik indeksini hisoblash
+- Vizual infografikalar va AI xulosalarini ko‘rsatish
+
+2) Ma’lumotlar oqimi (data pipeline)
+Bosqichlar ketma‑ketligi:
+A) Fayl yuklash: Excel/CSV fayllar Drag‑Drop orqali yuklanadi.
+B) Tozalash: Ustun nomlari normalizatsiya qilinadi (Admin, Amal, IP, Yaratilgan va hokazo).
+C) Statistik agregatsiya:
+   - Adminlar bo‘yicha amallar soni
+   - IP bo‘yicha tarqatilish
+   - Vaqt bo‘yicha faollik
+D) Analitik modullar:
+   - Risk ballari hisoblanadi
+   - Shubhali ketma‑ketliklar aniqlanadi
+   - Data movement risk bahosi chiqariladi
+   - AI Insights va Tavsiyalar shakllanadi
+E) Vizualizatsiya:
+   - Chart.js (bar, line, doughnut, radar)
+   - D3.js (Sankey, Parallel Coordinates)
+
+3) Asosiy bo‘limlar qanday ishlaydi?
+3.1 Statistik karta (Stats)
+Jami loglar, adminlar, IP va amal turlari soni hisoblanadi va kartalarda aks ettiriladi.
+
+3.2 Asosiy chartlar
+- Admin faolligi: Eng ko‘p amal bajargan adminlar
+- Amal turlari: Eng ko‘p takrorlangan amallar
+- IP tahlili: IP manzillar tarqatilishi
+- Timeline: Vaqt bo‘yicha loglar
+
+3.3 Infografikalar
+- Tizim Barqarorlik Indeksi: Xatolik ulushi asosida 0–100 ball
+- Haftalik Faollik Radar: Haftaning kunlari bo‘yicha faoliyat
+
+3.4 Sankey diagram
+Admin → Amal → Endpoint oqimi ko‘rsatiladi. Bu oqimlar yordamida kim nima bilan ko‘proq ishlagani ko‘rinadi.
+
+3.5 Parallel Coordinates
+Adminlarning ko‘p o‘lchovli atributlari (amallar soni, IP xilma‑xilligi, vaqt xilligi, xato ulushi, risk balli) bir grafikda taqqoslanadi.
+
+3.6 Risk ballari
+Risk balli quyidagilardan tuziladi:
+- Noto‘g‘ri urinishlar (error/fail)
+- IP manzillar ko‘pligi
+- Tungi soatlardagi faollik
+- Bitta amal ustunligi
+Natija: adminlarga PAST/O‘RTA/YUQORI risk darajasi beriladi.
+
+3.7 Shubhali ketma‑ketliklar
+Masalan: “DELETE → EXPORT” kabi xavfli kombinatsiyalar qisqa vaqt ichida bo‘lsa, signal beriladi.
+
+3.8 Data Movement
+IMPORT/EXPORT/UPLOAD/DOWNLOAD amallari ko‘p bo‘lsa, risk ko‘rsatkichi oshadi.
+
+3.9 AI Insights va Tavsiyalar
+Log statistikasi asosida AI faktlarga tayanib:
+- Eng faol adminlar
+- Eng ko‘p takrorlangan amallar
+- G‘ayrioddiy vaqt faolligi
+- Tavsiya etilgan audit/tekshiruvlar
+
+4) Ilmiy yangiliklar (Scientific Novelties)
+Quyidagi yondashuvlar tizimni ilmiy jihatdan qiziqarli qiladi:
+
+1. Evidence‑based AI Insight
+AI xulosalari “subyektiv emas”, balki to‘g‘ridan‑to‘g‘ri log dalillariga (amallar soni, vaqt, IP ko‘pligi) bog‘langan.
+
+2. Multi‑Dimensional Risk Profiling
+Parallel Coordinates orqali adminlar bir nechta risk o‘lchovida bir vaqtda taqqoslanadi — bu an’anaviy “faqat bitta ball” yondashuvidan kuchliroq.
+
+3. Behaviour Flow Modeling (Sankey)
+Admin → Amal → Endpoint oqimi bilan faoliyat oqimlari “graf asosida” modellashtiriladi, bu esa tizim auditini yuqori darajaga olib chiqadi.
+
+4. Temporal‑Anomaly Hybrid Detection
+Vaqt bo‘yicha faollik (tungi soatlar) va IP ko‘pligi birlashtirib risk hisoblash, an’anaviy “faqat son” asosidagi tekshiruvdan ancha aniqroq.
+
+5. Explainable Risk Score
+Risk ballining har bir komponenti (failed, IP, night, dominant action) ochiq ko‘rsatiladi. Bu “black‑box” emas, tushunarli (interpretable) risk baholash modelidir.
+
+5) Amaliy foyda
+- Auditorlar va xavfsizlik bo‘limi tez tekshiruv qiladi
+- Administratorlar faoliyati shaffof bo‘ladi
+- Xavfli holatlar oldindan aniqlanadi
+- Rahbariyat uchun vizual, tez tushunarli hisobot shakllanadi
+
+6) Texnik stack
+- Backend: Python (Flask)
+- Data processing: Pandas
+- Visualization: Chart.js, D3.js
+- UI: HTML/CSS (Glassmorphism dizayn)
+
+Agar xohlasangiz, qo‘shimcha bo‘limlar: real‑time monitoring, foydalanuvchi segmentatsiyasi, avtomatik audit hisobotlari ham qo‘shish mumkin.

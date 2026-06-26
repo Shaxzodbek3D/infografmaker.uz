@@ -1,0 +1,449 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NLP Tahlil - HEMIS Log Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+/* ””” RESET & VARIABLES ””””””””””””””””””””””””””” */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+ --bg: #f0f4ff;
+ --card: #ffffff;
+ --pri: #6c5ce7;
+ --sec: #a29bfe;
+ --acc: #00cec9;
+ --ok: #00b894;
+ --warn: #fdcb6e;
+ --err: #ff7675;
+ --crit: #d63031;
+ --txt: #2d3436;
+ --sub: #636e72;
+ --mute: #b2bec3;
+ --rad: 16px;
+ --shad: 0 4px 24px rgba(108,92,231,.10);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);padding:24px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+/* ””” HEADER ”””””””””””””””””””””””””””””””””””””” */
+.header{background:linear-gradient(135deg,var(--pri),var(--acc));border-radius:var(--rad);
+ padding:28px 32px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:1.8rem;font-weight:800}
+.header p{opacity:.85;font-size:.95rem;margin-top:4px}
+.btn-back{background:rgba(255,255,255,.2);border:none;color:#fff;padding:10px 20px;
+ border-radius:30px;cursor:pointer;font-weight:600;transition:.2s}
+.btn-back:hover{background:rgba(255,255,255,.35)}
+
+/* ””” SUMMARY CARDS ””””””””””””””””””””””””””””””” */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.s-card{background:var(--card);border-radius:var(--rad);padding:22px;box-shadow:var(--shad);
+ border-top:4px solid var(--pri);text-align:center;transition:.25s}
+.s-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(108,92,231,.15)}
+.s-card .val{font-size:2.2rem;font-weight:800;color:var(--pri)}
+.s-card .lbl{font-size:.82rem;color:var(--sub);margin-top:4px;text-transform:uppercase;font-weight:600}
+
+/* ””” SECTION TITLES ”””””””””””””””””””””””””””””” */
+.sec-title{font-size:1.15rem;font-weight:700;color:var(--txt);margin-bottom:16px;
+ display:flex;align-items:center;gap:8px}
+.sec-title::before{content:'';width:4px;height:22px;border-radius:2px;background:var(--pri);display:block}
+
+/* ””” TWO-COL GRID ”””””””””””””””””””””””””””””””” */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* ””” CARD BASE ””””””””””””””””””””””””””””””””””” */
+.card{background:var(--card);border-radius:var(--rad);padding:24px;box-shadow:var(--shad)}
+
+/* ””” SEVERITY BADGES ””””””””””””””””””””””””””””” */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700}
+.badge-critical{background:#ffeaea;color:var(--crit)}
+.badge-error {background:#fff0ef;color:var(--err)}
+.badge-warning {background:#fffbea;color:#e17055}
+.badge-info {background:#eafaf8;color:var(--ok)}
+.badge-debug {background:#f0f0ff;color:var(--sec)}
+
+/* ””” SEVERITY DONUT ”””””””””””””””””””””””””””””” */
+.donut-wrap{position:relative;width:220px;height:220px;margin:0 auto}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+ text-align:center;pointer-events:none}
+.donut-center .big{font-size:1.8rem;font-weight:800;color:var(--txt)}
+.donut-center .sm {font-size:.75rem;color:var(--sub)}
+
+/* ””” SEVERITY LEGEND ””””””””””””””””””””””””””””” */
+.sev-legend{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.sev-row{display:flex;justify-content:space-between;align-items:center}
+.sev-dot{width:12px;height:12px;border-radius:50%;margin-right:8px;flex-shrink:0}
+.sev-name{display:flex;align-items:center;font-size:.9rem}
+.sev-bar-wrap{flex:1;margin:0 14px;height:7px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.sev-bar{height:100%;border-radius:4px}
+.sev-count{font-weight:700;font-size:.9rem;min-width:38px;text-align:right}
+
+/* ””” KEYWORD CLOUD ””””””””””””””””””””””””””””””” */
+.kw-cloud{display:flex;flex-wrap:wrap;gap:10px;padding:8px 0}
+.kw-chip{padding:6px 14px;border-radius:20px;font-weight:600;cursor:default;transition:.2s}
+.kw-chip:hover{transform:scale(1.08)}
+
+/* ””” TEMPLATE LIST ””””””””””””””””””””””””””””””” */
+.tmpl-list{display:flex;flex-direction:column;gap:10px}
+.tmpl-row{display:flex;align-items:center;gap:12px;background:#f8f9ff;
+ border-radius:10px;padding:12px 14px;border-left:4px solid var(--pri)}
+.tmpl-count{background:var(--pri);color:#fff;padding:3px 10px;border-radius:12px;
+ font-size:.8rem;font-weight:700;flex-shrink:0}
+.tmpl-text{font-family:monospace;font-size:.85rem;color:var(--sub);flex:1;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ””” ACTION GROUP BARS ””””””””””””””””””””””””””” */
+.act-group-list{display:flex;flex-direction:column;gap:12px}
+.act-row{display:grid;grid-template-columns:160px 1fr 60px;align-items:center;gap:10px}
+.act-name{font-size:.88rem;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-bar-bg{height:10px;background:#eee;border-radius:5px;overflow:hidden}
+.act-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--pri),var(--acc))}
+.act-pct{font-size:.82rem;font-weight:700;color:var(--pri);text-align:right}
+
+/* ””” NGRAM TABLE ””””””””””””””””””””””””””””””””” */
+.ngram-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.ngram-table th{background:#f4f6ff;padding:10px 14px;text-align:left;font-weight:700;color:var(--sub);font-size:.78rem;text-transform:uppercase}
+.ngram-table td{padding:9px 14px;border-bottom:1px solid #f0f0f0}
+.ngram-table tr:last-child td{border:none}
+.ngram-table tr:hover td{background:#fafbff}
+
+/* ””” LOADING & EMPTY ””””””””””””””””””””””””””””” */
+.loading{text-align:center;padding:60px;color:var(--sub)}
+.spinner{width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:var(--pri);
+ border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--mute);font-size:.95rem}
+
+/* ””” ERROR ADMIN TABLE ””””””””””””””””””””””””””” */
+.err-admin-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.err-admin-table th{background:#fff0f0;padding:10px;text-align:left;font-weight:700;color:var(--sub);font-size:.78rem;text-transform:uppercase}
+.err-admin-table td{padding:9px 10px;border-bottom:1px solid #fce4e4}
+.err-admin-table tr:last-child td{border:none}
+
+/* ””” TOOLTIP ””””””””””””””””””””””””””””””””””””” */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);
+ background:#2d3436;color:#fff;font-size:.78rem;padding:5px 10px;border-radius:6px;
+ white-space:nowrap;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="header">
+<div>
+<h1>NLP Log Tahlili</h1>
+<p>Log xabarlarini matn tahlili usullari bilan o'rganish</p>
+</div>
+<button class="btn-back" onclick="history.back()">† Orqaga</button>
+</div>
+
+<!-- LOADING STATE -->
+<div id="loadingBlock" class="card loading">
+<div class="spinner"></div>
+<p>NLP tahlil qilinmoqda, iltimos kuting...</p>
+</div>
+
+<!-- CONTENT (hidden until loaded) -->
+<div id="content" style="display:none;display:flex;flex-direction:column;gap:24px">
+
+<!-- SUMMARY -->
+<div class="summary-grid" id="summaryGrid"></div>
+
+<!-- ERROR ANALYSIS + KEYWORD CLOUD -->
+<div class="two-col">
+
+<!-- Severity Donut -->
+<div class="card">
+<div class="sec-title">Xatoliklar Tasnifi</div>
+<div class="donut-wrap">
+<canvas id="sevChart"></canvas>
+<div class="donut-center">
+<div class="big" id="errTotal">0</div>
+<div class="sm">jami xato</div>
+</div>
+</div>
+<div class="sev-legend" id="sevLegend"></div>
+</div>
+
+<!-- Keyword Cloud -->
+<div class="card">
+<div class="sec-title">Eng Ko'p Uchraydigan So'zlar</div>
+<div class="kw-cloud" id="kwCloud"></div>
+</div>
+</div>
+
+<!-- ACTION GROUPS + NGRAMS -->
+<div class="two-col">
+
+<!-- Action Groups -->
+<div class="card">
+<div class="sec-title">Amallarning Semantik Guruhlari</div>
+<div class="act-group-list" id="actGroups"></div>
+</div>
+
+<!-- Bigrams -->
+<div class="card">
+<div class="sec-title">Eng Ko'p Juft So'zlar (Bigrams)</div>
+<table class="ngram-table" id="bigramTable">
+<thead><tr><th>#</th><th>Juft So'z</th><th>Soni</th><th>%</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+<!-- TEMPLATES -->
+<div class="card">
+<div class="sec-title">Log Shablonlari (Drain-lite)</div>
+<div class="tmpl-list" id="tmplList"></div>
+</div>
+
+<!-- HOURLY ERRORS CHART + ERROR ADMINS -->
+<div class="two-col">
+
+<!-- Hourly error line chart -->
+<div class="card">
+<div class="sec-title">Soatlar Bo'yicha Xatoliklar</div>
+<canvas id="hourlyErrChart" height="200"></canvas>
+</div>
+
+<!-- Top error admins -->
+<div class="card">
+<div class="sec-title">Eng Ko'p Xato Chiqargan Adminlar</div>
+<table class="err-admin-table" id="errAdminTable">
+<thead><tr><th>#</th><th>Admin</th><th>Xatolar</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /wrap -->
+
+<script>
+// ””” PALETTE ”””””””””””””””””””””””””””””””””””””””
+const SEV_COLORS = {
+ critical: '#d63031',
+ error: '#ff7675',
+ warning: '#fdcb6e',
+ info: '#00b894',
+ debug: '#a29bfe'
+};
+const KW_PALETTE = [
+ '#6c5ce7','#00cec9','#fd79a8','#0984e3','#e17055',
+ '#74b9ff','#55efc4','#ffeaa7','#fab1a0','#81ecec'
+];
+
+// ””” FETCH & RENDER ””””””””””””””””””””””””””””””””
+async function loadNLP() {
+ try {
+ const res = await fetch('/api/nlp/report');
+ const body = await res.json();
+ if (!body.success) { showError(body.error); return; }
+
+ const d = body.data;
+ renderSummary(d.summary);
+ renderSeverity(d.error_analysis);
+ renderKeywords(d.keywords);
+ renderActionGroups(d.action_groups);
+ renderBigrams(d.bigrams);
+ renderTemplates(d.templates);
+ renderHourlyErrors(d.error_analysis.hourly_errors || {});
+ renderErrorAdmins(d.error_analysis.top_error_admins || []);
+
+ document.getElementById('loadingBlock').style.display = 'none';
+ document.getElementById('content').style.display = 'flex';
+ } catch(e) {
+ showError(e.message);
+ }
+}
+
+// ””” SUMMARY ”””””””””””””””””””””””””””””””””””””””
+function renderSummary(s) {
+ const items = [
+ {val: s.total_logs.toLocaleString(), lbl: 'Jami Loglar'},
+ {val: s.unique_admins, lbl: 'Adminlar'},
+ {val: s.unique_actions, lbl: 'Amal Turlari'},
+ {val: s.unique_templates, lbl: 'Log Shablonlari'},
+ {val: s.error_rate_pct + '%', lbl: 'Xato Ulushi'},
+ {val: s.dominant_category, lbl: 'Dominant Kategoriya'},
+ ];
+ document.getElementById('summaryGrid').innerHTML = items.map(i =>
+ `<div class="s-card"><div class="val">${i.val}</div><div class="lbl">${i.lbl}</div></div>`
+ ).join('');
+}
+
+// ””” SEVERITY DONUT ””””””””””””””””””””””””””””””””
+function renderSeverity(err) {
+ const dist = err.distribution || {};
+ const order = ['critical','error','warning','info','debug'];
+ const labels = [], data = [], colors = [];
+ let totalErr = 0;
+
+ order.forEach(lv =>{
+ if (dist[lv]) {
+ labels.push(lv.toUpperCase());
+ data.push(dist[lv]);
+ colors.push(SEV_COLORS[lv]);
+ if (['critical','error'].includes(lv)) totalErr += dist[lv];
+ }
+ });
+
+ document.getElementById('errTotal').textContent = totalErr.toLocaleString();
+
+ new Chart(document.getElementById('sevChart').getContext('2d'), {
+ type: 'doughnut',
+ data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 3, borderColor: '#fff' }] },
+ options: {
+ cutout: '68%', responsive: true,
+ plugins: { legend: { display: false }, tooltip: {
+ callbacks: { label: ctx =>` ${ctx.label}: ${ctx.raw.toLocaleString()}` }
+ }}
+ }
+ });
+
+ // Legend
+ const total = data.reduce((a,b)=>a+b, 0) || 1;
+ const html = order.map(lv =>{
+ if (!dist[lv]) return '';
+ const pct = (dist[lv] / total * 100).toFixed(1);
+ return `
+<div class="sev-row">
+<span class="sev-name">
+<span class="sev-dot" style="background:${SEV_COLORS[lv]}"></span>
+<span class="badge badge-${lv}">${lv.toUpperCase()}</span>
+</span>
+<div class="sev-bar-wrap">
+<div class="sev-bar" style="width:${pct}%;background:${SEV_COLORS[lv]}"></div>
+</div>
+<span class="sev-count">${dist[lv].toLocaleString()}</span>
+</div>`;
+ }).join('');
+ document.getElementById('sevLegend').innerHTML = html;
+}
+
+// ””” KEYWORD CLOUD ”””””””””””””””””””””””””””””””””
+function renderKeywords(kws) {
+ if (!kws || !kws.length) { document.getElementById('kwCloud').innerHTML = '<div class="empty">Ma\'lumot yo\'q</div>'; return; }
+ const max = kws[0].frequency;
+ const html = kws.map((k, i) =>{
+ const size = 12 + Math.round((k.frequency / max) * 14);
+ const col = KW_PALETTE[i % KW_PALETTE.length];
+ return `<span class="kw-chip"
+ data-tip="${k.frequency} marta (${k.percentage}%)"
+ style="background:${col}18;color:${col};border:1px solid ${col}40;font-size:${size}px">
+ ${k.keyword}
+</span>`;
+ }).join('');
+ document.getElementById('kwCloud').innerHTML = html;
+}
+
+// ””” ACTION GROUPS ””””””””””””””””””””””””””””””””””
+function renderActionGroups(groups) {
+ if (!groups || !Object.keys(groups).length) {
+ document.getElementById('actGroups').innerHTML = '<div class="empty">Ma\'lumot yo\'q</div>'; return;
+ }
+ const sorted = Object.entries(groups).sort((a,b) =>b[1].count - a[1].count);
+ const maxPct = sorted[0][1].percentage;
+ const html = sorted.map(([cat, s]) =>`
+<div class="act-row">
+<span class="act-name" data-tip="${s.count} ta amal">${cat}</span>
+<div class="act-bar-bg">
+<div class="act-bar-fill" style="width:${(s.percentage/maxPct*100).toFixed(1)}%"></div>
+</div>
+<span class="act-pct">${s.percentage}%</span>
+</div>`
+ ).join('');
+ document.getElementById('actGroups').innerHTML = html;
+}
+
+// ””” BIGRAMS ””””””””””””””””””””””””””””””””””””””””
+function renderBigrams(bigrams) {
+ const tbody = document.querySelector('#bigramTable tbody');
+ if (!bigrams || !bigrams.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Ma\'lumot yo\'q</td></tr>'; return; }
+ tbody.innerHTML = bigrams.slice(0, 15).map((g, i) =>`
+<tr>
+<td style="color:var(--mute)">${i+1}</td>
+<td><code style="background:#f4f6ff;padding:2px 7px;border-radius:5px">${g.ngram}</code></td>
+<td><strong>${g.count}</strong></td>
+<td style="color:var(--sub)">${g.percentage}%</td>
+</tr>`
+ ).join('');
+}
+
+// ””” TEMPLATES ””””””””””””””””””””””””””””””””””””””
+function renderTemplates(tmpls) {
+ if (!tmpls || !tmpls.length) {
+ document.getElementById('tmplList').innerHTML = '<div class="empty">Shablon topilmadi</div>'; return;
+ }
+ document.getElementById('tmplList').innerHTML = tmpls.slice(0, 12).map(t =>`
+<div class="tmpl-row">
+<span class="tmpl-count">${t.count}x</span>
+<span class="tmpl-text" title="${t.template}">${t.template}</span>
+<span class="badge badge-${t.severity}">${t.severity}</span>
+</div>`
+ ).join('');
+}
+
+// ””” HOURLY ERRORS ””””””””””””””””””””””””””””””””””
+function renderHourlyErrors(hourly) {
+ const hours = Array.from({length: 24}, (_, i) =>i);
+ const values = hours.map(h =>hourly[h] || 0);
+ new Chart(document.getElementById('hourlyErrChart').getContext('2d'), {
+ type: 'line',
+ data: {
+ labels: hours.map(h =>`${String(h).padStart(2,'0')}:00`),
+ datasets: [{
+ label: 'Xatoliklar',
+ data: values,
+ borderColor: '#ff7675',
+ backgroundColor: 'rgba(255,118,117,.12)',
+ borderWidth: 2, fill: true, tension: 0.35,
+ pointRadius: values.map(v =>v >0 ? 4 : 0),
+ pointBackgroundColor: '#ff7675'
+ }]
+ },
+ options: {
+ responsive: true,
+ plugins: { legend: { display: false } },
+ scales: {
+ x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+ y: { beginAtZero: true, ticks: { stepSize: 1 } }
+ }
+ }
+ });
+}
+
+// ””” ERROR ADMINS ”””””””””””””””””””””””””””””””””””
+function renderErrorAdmins(admins) {
+ const tbody = document.querySelector('#errAdminTable tbody');
+ if (!admins || !admins.length) {
+ tbody.innerHTML = '<tr><td colspan="3" class="empty">Ma\'lumot yo\'q</td></tr>'; return;
+ }
+ tbody.innerHTML = admins.slice(0, 10).map((a, i) =>`
+<tr>
+<td style="color:var(--mute)">${i+1}</td>
+<td>${a.admin}</td>
+<td><strong style="color:var(--err)">${a.error_count}</strong></td>
+</tr>`
+ ).join('');
+}
+
+// ””” ERROR STATE ””””””””””””””””””””””””””””””””””””
+function showError(msg) {
+ document.getElementById('loadingBlock').innerHTML =
+ `<p style="color:var(--err)">X Xato: ${msg}</p><p style="color:var(--sub);margin-top:8px">Avval fayl yuklang va tahlilni ishga tushiring.</p>`;
+}
+
+// ””” INIT ”””””””””””””””””””””””””””””””””””””””””””
+loadNLP();
+</script>
+</body>
+</html>
+
+

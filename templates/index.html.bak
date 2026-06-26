@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMIS Log Tahlili va Infografika</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .data-source-selector {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .data-source-selector label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .data-source-selector input[type="radio"] {
+            cursor: pointer;
+        }
+        
+        .source-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .source-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .source-status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .source-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1em;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button.secondary {
+            background: #764ba2;
+        }
+        
+        button.secondary:hover {
+            background: #653a8a;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error.active {
+            display: block;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        
+        /* FILTERS STYLES */
+        .filters-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filters-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        
+        .filter-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .filter-btn:hover {
+            background: #5568d3;
+        }
+        
+        .filter-results {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 3px;
+        }
+        
+        /* ANOMALIES STYLES */
+        .anomalies-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .anomalies-container h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .anomalies-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .anomaly-card {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .anomaly-card.medium {
+            background: linear-gradient(135deg, #ffeaa7 0%, #ffcc80 100%);
+            border-left-color: #f39c12;
+        }
+        
+        .anomaly-type {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .anomaly-desc {
+            color: #555;
+            font-size: 0.9em;
+        }
+        
+        /* RISK SCORES STYLES */
+        .risk-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .risk-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .risk-table {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .risk-score-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .risk-bar {
+            width: 150px;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .risk-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #f39c12, #e74c3c);
+            transition: width 0.3s ease;
+        }
+        
+        /* AI INSIGHTS STYLES */
+        .ai-insights-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ai-insights-container h3 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #e8d4f8 0%, #f0e1ff 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #9b59b6;
+        }
+        
+        .insight-card.info {
+            background: linear-gradient(135deg, #d4e8f8 0%, #e1f0ff 100%);
+            border-left-color: #3498db;
+        }
+        
+        .insight-card.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe680 100%);
+            border-left-color: #f39c12;
+        }
+        
+        .insight-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .insight-desc {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .insight-rec {
+            background: rgba(255,255,255,0.7);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #333;
+            margin-top: 8px;
+        }
+        
+        /* PREDICTIONS STYLES */
+        .predictions-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .predictions-container h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .prediction-card {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .prediction-risk {
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 8px;
+        }
+        
+        .prediction-msg {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .prediction-action {
+            background: rgba(231,76,60,0.1);
+            padding: 8px;
+            border-radius: 4px;
+            color: #c0392b;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+        
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        
+        .confidence-high {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .confidence-medium {
+            background: #f39c12;
+            color: white;
+        }
+        
+        /* RECOMMENDATIONS STYLES */
+        .recommendations-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recommendations-container h3 {
+            color: #27ae60;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .recommendations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .recommendation-card {
+            background: linear-gradient(135deg, #e8f8f0 0%, #e1f0ea 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #27ae60;
+        }
+        
+        .recommendation-card.high {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            border-left-color: #e74c3c;
+        }
+        
+        .rec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .rec-title {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .rec-priority {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .priority-high {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .priority-medium {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .rec-reason {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .rec-steps {
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .rec-steps ol {
+            margin-left: 20px;
+            font-size: 0.85em;
+            color: #333;
+        }
+        
+        .rec-steps li {
+            margin-bottom: 5px;
+        }
+        
+        /* ADMIN PROFILES STYLES */
+        .profiles-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profiles-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .profile-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+        }
+        
+        .profile-card {
+            background: linear-gradient(135deg, #f0e1ff 0%, #e8d4f8 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .profile-header {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .profile-info {
+            background: rgba(255,255,255,0.7);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .profile-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .profile-action-item {
+            background: rgba(255,255,255,0.5);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            text-align: center;
+        }
+        
+        .profile-action-item strong {
+            display: block;
+            color: #667eea;
+        }
+        
+        /* ROLES STYLES */
+        .roles-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .roles-container h3 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .role-card {
+            background: linear-gradient(135deg, #e1f5ff 0%, #d4e8f8 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .role-description {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .role-actions {
+            background: rgba(255,255,255,0.7);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        
+        /* SUSPICIOUS SEQUENCES STYLES */
+        .sequences-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sequences-container h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .sequences-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .sequence-card {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .sequence-pattern {
+            background: rgba(231,76,60,0.1);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 10px;
+        }
+        
+        .sequence-info {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        /* DATA MOVEMENT STYLES */
+        .data-movement-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .data-movement-container h3 {
+            color: #27ae60;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .movement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .movement-item {
+            background: linear-gradient(135deg, #e8f8f0 0%, #e1f0ea 100%);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .movement-admin {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .movement-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.6);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+        
+        .stat-box strong {
+            display: block;
+            color: #27ae60;
+            font-size: 1.1em;
+        }
+        
+        .movement-risk {
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .risk-high {
+            border-left: 3px solid #e74c3c;
+            color: #c0392b;
+        }
+        
+        .risk-medium {
+            border-left: 3px solid #f39c12;
+            color: #d68910;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>HEMIS Log Tahlili va Infografika Tizimi</h1>
+                    <p class="subtitle">Hemis.buxdu.uz tizimining loglarini real vaqtda tahlil qilish</p>
+                </div>
+                <div class="data-source-selector">
+                    <label>
+                        <input type="radio" name="dataSource" value="file" checked> 
+                        📁 File
+                    </label>
+                    <label>
+                        <input type="radio" name="dataSource" value="api"> 
+                        🌐 BUXDU API
+                    </label>
+                    <label>
+                        <input type="radio" name="dataSource" value="combined"> 
+                        🔗 Birlashtirilgan
+                    </label>
+                    <span id="sourceStatus" class="source-status active">Tayyor</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="actions">
+            <button onclick="loadDataSource()">Ma'lumot Manbasini Yangilash</button>
+            <button onclick="loadStats()">Yangilash</button>
+            <button class="secondary" onclick="exportPDF()">PDF ga Eksport Qilish</button>
+            <button class="secondary" onclick="refreshCharts()">Grafiklar Yangilash</button>
+        </div>
+        
+        <!-- FILTERS SECTION -->
+        <div class="filters-container">
+            <h3>Loglarni Filtrlash</h3>
+            <div class="filter-grid">
+                <input type="text" id="filterAdmin" placeholder="Admin nomini izlash..." class="filter-input">
+                <input type="text" id="filterIP" placeholder="IP manzil..." class="filter-input">
+                <select id="filterAction" class="filter-input">
+                    <option value="">Amal turini tanlang</option>
+                    <option value="LOGIN">LOGIN</option>
+                    <option value="VIEW">VIEW</option>
+                    <option value="UPDATE">UPDATE</option>
+                </select>
+                <input type="date" id="filterStartDate" class="filter-input">
+                <input type="date" id="filterEndDate" class="filter-input">
+                <button onclick="applyFilters()" class="filter-btn">Filtrlash</button>
+            </div>
+            <div id="filterResults" class="filter-results"></div>
+        </div>
+        
+        <!-- ANOMALIES SECTION -->
+        <div class="anomalies-container">
+            <h3>Notekis Faollik</h3>
+            <div id="anomaliesBox" class="anomalies-box"></div>
+        </div>
+        
+        <!-- RISK SCORES SECTION -->
+        <div class="risk-container">
+            <h3>Admin Xavf Balları</h3>
+            <div id="riskScores" class="risk-table"></div>
+        </div>
+        
+        <!-- AI INSIGHTS SECTION -->
+        <div class="ai-insights-container">
+            <h3>🤖 Suniy Intellekt Insights</h3>
+            <div id="aiInsights" class="insights-grid"></div>
+        </div>
+        
+        <!-- AI PREDICTIONS SECTION -->
+        <div class="predictions-container">
+            <h3>⚠️ Xavf Proqnozlari</h3>
+            <div id="predictions" class="predictions-grid"></div>
+        </div>
+        
+        <!-- AI RECOMMENDATIONS SECTION -->
+        <div class="recommendations-container">
+            <h3>💡 AI Tavsiyalari</h3>
+            <div id="recommendations" class="recommendations-list"></div>
+        </div>
+        
+        <!-- ADMIN PROFILES SECTION -->
+        <div class="profiles-container">
+            <h3>👤 Admin Profillar va Rol Analizi</h3>
+            <div class="profile-filters">
+                <input type="text" id="adminSearch" placeholder="Admin nomini izlash..." class="filter-input" style="width: 300px;">
+                <button onclick="loadAdminProfiles()" class="filter-btn">Profil Yuklash</button>
+            </div>
+            <div id="adminProfiles" class="profiles-grid"></div>
+        </div>
+        
+        <!-- USER ROLES SECTION -->
+        <div class="roles-container">
+            <h3>🎭 Detected User Roles</h3>
+            <div id="userRoles" class="roles-grid"></div>
+        </div>
+        
+        <!-- SUSPICIOUS SEQUENCES SECTION -->
+        <div class="sequences-container">
+            <h3>⚠️ Suspekt Amal Ketma-ketliklari</h3>
+            <div id="suspiciousSequences" class="sequences-grid"></div>
+        </div>
+        
+        <!-- DATA MOVEMENT SECTION -->
+        <div class="data-movement-container">
+            <h3>📊 Ma'lumot Harakati Patterns</h3>
+            <div id="dataMovement" class="movement-list"></div>
+        </div>
+        
+        <div class="error" id="errorMsg"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Yuklanmoqda...</p>
+        </div>
+        
+        <div class="stats-grid" id="statsContainer">
+            <!-- Stats bu yerga yuklaniadi -->
+        </div>
+        
+        <div class="charts-grid" id="chartsContainer">
+            <div class="chart-container">
+                <div class="chart-title">Admin Faolligi</div>
+                <canvas id="adminChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Amal Turlarining Tarqatilishi</div>
+                <canvas id="actionChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">IP Manzilar Tahlili</div>
+                <canvas id="ipChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Vaqt Bo'yicha Loglar Soni</div>
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2024 HEMIS Log Tahlili Tizimi | Yangilangan: <span id="lastUpdate">-</span></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        let charts = {};
+
+        async function loadDataSource() {
+            const source = document.querySelector('input[name="dataSource"]:checked').value;
+            const statusEl = document.getElementById('sourceStatus');
+            
+            statusEl.textContent = 'Yuklanmoqda...';
+            statusEl.className = 'source-status loading';
+            
+            try {
+                let endpoint = '';
+                if (source === 'api') {
+                    endpoint = '/api/buxdu/fetch-data';
+                } else if (source === 'combined') {
+                    endpoint = '/api/buxdu/combined-analysis';
+                } else {
+                    endpoint = '/api/data-source';
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: endpoint === '/api/data-source' ? 'GET' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    statusEl.textContent = `✓ ${result.data_source || source} - ${result.rows_fetched || result.total_rows} satir`;
+                    statusEl.className = 'source-status active';
+                    
+                    // Barcha tahlillarni qayta yuklash
+                    setTimeout(() => {
+                        loadStats();
+                        loadAdminChart();
+                        loadActionChart();
+                        loadIpChart();
+                        loadAnomalies();
+                        loadRiskScores();
+                    }, 500);
+                } else {
+                    statusEl.textContent = '✗ Xato';
+                    statusEl.className = 'source-status error';
+                    showError(result.error || 'Ma\'lumot yuklanishda xato');
+                }
+            } catch (error) {
+                statusEl.textContent = '✗ Ulanish xatosi';
+                statusEl.className = 'source-status error';
+                showError('Xato: ' + error.message);
+            }
+        }
+
+        async function checkDataSourceStatus() {
+            try {
+                const response = await fetch('/api/data-source');
+                const data = await response.json();
+                
+                document.querySelector(`input[name="dataSource"][value="${data.data_source}"]`).checked = true;
+                const statusEl = document.getElementById('sourceStatus');
+                statusEl.textContent = `✓ ${data.data_source} - ${data.total_rows} satir`;
+                statusEl.className = 'source-status active';
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+
+        async function loadStats() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                const html = `
+                    <div class="stat-card">
+                        <div class="stat-value">${data.total_logs.toLocaleString()}</div>
+                        <div class="stat-label">Jami Loglar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.unique_admins}</div>
+                        <div class="stat-label">Adminlar Soni</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.unique_ips}</div>
+                        <div class="stat-label">IP Manzilar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.unique_actions}</div>
+                        <div class="stat-label">Amal Turları</div>
+                    </div>
+                `;
+                
+                document.getElementById('statsContainer').innerHTML = html;
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString('uz-UZ');
+                
+                showLoading(false);
+            } catch (error) {
+                showError('Statistika yuklanishda xato: ' + error.message);
+            }
+        }
+
+        async function loadAdminChart() {
+            try {
+                const response = await fetch('/api/admin-activity');
+                const data = await response.json();
+                
+                if (charts.adminChart) charts.adminChart.destroy();
+                
+                const ctx = document.getElementById('adminChart').getContext('2d');
+                charts.adminChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels.slice(0, 10),
+                        datasets: [{
+                            label: 'Loglar Soni',
+                            data: data.data.slice(0, 10),
+                            backgroundColor: '#667eea',
+                            borderColor: '#667eea',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Admin chart error:', error);
+            }
+        }
+
+        async function loadActionChart() {
+            try {
+                const response = await fetch('/api/action-distribution');
+                const data = await response.json();
+                
+                if (charts.actionChart) charts.actionChart.destroy();
+                
+                const ctx = document.getElementById('actionChart').getContext('2d');
+                charts.actionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                                '#43e97b', '#fa709a', '#30cfd0', '#ffa400'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Action chart error:', error);
+            }
+        }
+
+        async function loadIpChart() {
+            try {
+                const response = await fetch('/api/ip-analysis');
+                const data = await response.json();
+                
+                if (charts.ipChart) charts.ipChart.destroy();
+                
+                const ctx = document.getElementById('ipChart').getContext('2d');
+                charts.ipChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Kirish Soni',
+                            data: data.data,
+                            backgroundColor: '#764ba2',
+                            borderColor: '#764ba2',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { beginAtZero: true }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('IP chart error:', error);
+            }
+        }
+
+        async function loadTimelineChart() {
+            try {
+                const response = await fetch('/api/timeline');
+                const data = await response.json();
+                
+                if (charts.timelineChart) charts.timelineChart.destroy();
+                
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                charts.timelineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Loglar Soni',
+                            data: data.data,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Timeline chart error:', error);
+            }
+        }
+
+        async function refreshCharts() {
+            showLoading(true);
+            await loadAdminChart();
+            await loadActionChart();
+            await loadIpChart();
+            await loadTimelineChart();
+            showLoading(false);
+        }
+
+        async function exportPDF() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/export-pdf');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `HEMIS_Report_${new Date().getTime()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                showError('PDF eksportda xato: ' + error.message);
+            }
+            showLoading(false);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+            setTimeout(() => errorEl.classList.remove('active'), 5000);
+        }
+
+        // Sahifa yuklanganda
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            refreshCharts();
+            loadAnomalies();
+            loadRiskScores();
+            loadAIInsights();
+            loadPredictions();
+            loadRecommendations();
+            loadAdminProfiles();
+            loadUserRoles();
+            loadSuspiciousSequences();
+            loadDataMovement();
+        });
+        
+        async function applyFilters() {
+            showLoading(true);
+            try {
+                const filters = {
+                    admin: document.getElementById('filterAdmin').value,
+                    ip: document.getElementById('filterIP').value,
+                    action: document.getElementById('filterAction').value,
+                    start_date: document.getElementById('filterStartDate').value,
+                    end_date: document.getElementById('filterEndDate').value
+                };
+                
+                const response = await fetch('/api/filter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filters)
+                });
+                
+                const data = await response.json();
+                
+                let html = `<h4>Natijalar: ${data.total_filtered} ta log topildi</h4>`;
+                
+                if (data.data && data.data.length > 0) {
+                    data.data.slice(0, 20).forEach(log => {
+                        html += `
+                            <div class="result-item">
+                                <strong>${log['Admin nomi']}</strong> - 
+                                ${log['Amal']} 
+                                <br><small>${log['IP']} | ${log['Yaratilgan']}</small>
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('filterResults').innerHTML = html;
+                showLoading(false);
+            } catch (error) {
+                showError('Filter qo\'llanishda xato: ' + error.message);
+            }
+        }
+        
+        async function loadAnomalies() {
+            try {
+                const response = await fetch('/api/anomalies');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.anomalies && data.anomalies.length > 0) {
+                    data.anomalies.forEach(anomaly => {
+                        const severity = anomaly.severity || 'low';
+                        const severityClass = severity === 'high' ? '' : 'medium';
+                        
+                        html += `
+                            <div class="anomaly-card ${severityClass}">
+                                <div class="anomaly-type">${anomaly.type}</div>
+                                <div class="anomaly-desc">${anomaly.description}</div>
+                                ${anomaly.severity ? `<small>Xavf: ${anomaly.severity}</small>` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p style="color: #2ecc71;">Hech qanday notekis faollik topilmadi!</p>';
+                }
+                
+                document.getElementById('anomaliesBox').innerHTML = html;
+            } catch (error) {
+                console.error('Anomalies error:', error);
+            }
+        }
+        
+        async function loadRiskScores() {
+            try {
+                const response = await fetch('/api/risk-scores');
+                const data = await response.json();
+                
+                let html = `
+                    <table>
+                        <tr>
+                            <th>Admin Nomi</th>
+                            <th>Xavf Bali</th>
+                            <th>Jami Amallar</th>
+                            <th>IP Manzillar</th>
+                            <th>Noto'g'ri Urinishlar</th>
+                        </tr>
+                `;
+                
+                if (data.scores && data.scores.length > 0) {
+                    data.scores.slice(0, 15).forEach(score => {
+                        const riskColor = score.risk_score > 60 ? '#e74c3c' : 
+                                        score.risk_score > 30 ? '#f39c12' : '#2ecc71';
+                        
+                        html += `
+                            <tr>
+                                <td><strong>${score.admin}</strong></td>
+                                <td>
+                                    <div class="risk-score-bar">
+                                        <div class="risk-bar">
+                                            <div class="risk-fill" style="width: ${score.risk_score}%; background-color: ${riskColor};"></div>
+                                        </div>
+                                        <span>${score.risk_score}/100</span>
+                                    </div>
+                                </td>
+                                <td>${score.total_actions}</td>
+                                <td>${score.unique_ips}</td>
+                                <td>${score.failed_attempts}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += '</table>';
+                document.getElementById('riskScores').innerHTML = html;
+            } catch (error) {
+                console.error('Risk scores error:', error);
+            }
+        }
+        
+        async function loadAIInsights() {
+            try {
+                const response = await fetch('/api/ai/insights');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.insights && data.insights.length > 0) {
+                    data.insights.slice(0, 6).forEach(insight => {
+                        const cardClass = insight.severity === 'warning' ? 'warning' : insight.severity === 'high' ? '' : 'info';
+                        
+                        html += `
+                            <div class="insight-card ${cardClass}">
+                                <div class="insight-title">${insight.title}</div>
+                                <div class="insight-desc">${insight.description}</div>
+                                <div class="insight-rec"><strong>Tavsiya:</strong> ${insight.recommendation}</div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('aiInsights').innerHTML = html;
+            } catch (error) {
+                console.error('AI insights error:', error);
+            }
+        }
+        
+        async function loadPredictions() {
+            try {
+                const response = await fetch('/api/ai/predictions');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.predictions && data.predictions.length > 0) {
+                    data.predictions.forEach(pred => {
+                        const confClass = pred.confidence === 'high' ? 'confidence-high' : 'confidence-medium';
+                        
+                        html += `
+                            <div class="prediction-card">
+                                <div class="prediction-risk">${pred.risk.replace(/_/g, ' ').toUpperCase()}</div>
+                                <div class="prediction-msg">${pred.message}</div>
+                                <div class="prediction-action"><strong>Harakat:</strong> ${pred.suggested_action}</div>
+                                <span class="confidence-badge ${confClass}">${pred.confidence.toUpperCase()}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p style="color: #27ae60;">Xavf signallari topilmadi!</p>';
+                }
+                
+                document.getElementById('predictions').innerHTML = html;
+            } catch (error) {
+                console.error('Predictions error:', error);
+            }
+        }
+        
+        async function loadRecommendations() {
+            try {
+                const response = await fetch('/api/ai/recommendations');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.recommendations && data.recommendations.length > 0) {
+                    data.recommendations.forEach(rec => {
+                        const cardClass = rec.priority === 'high' ? 'high' : '';
+                        const priorityClass = rec.priority === 'high' ? 'priority-high' : 'priority-medium';
+                        
+                        const stepsHtml = rec.steps ? `
+                            <div class="rec-steps">
+                                <ol>
+                                    ${rec.steps.map(step => `<li>${step}</li>`).join('')}
+                                </ol>
+                            </div>
+                        ` : '';
+                        
+                        html += `
+                            <div class="recommendation-card ${cardClass}">
+                                <div class="rec-header">
+                                    <div class="rec-title">${rec.action}</div>
+                                    <span class="rec-priority ${priorityClass}">${rec.priority.toUpperCase()}</span>
+                                </div>
+                                <div class="rec-reason"><strong>Sabab:</strong> ${rec.reason}</div>
+                                ${stepsHtml}
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('recommendations').innerHTML = html;
+            } catch (error) {
+                console.error('Recommendations error:', error);
+            }
+        }
+        
+        async function loadAdminProfiles() {
+            showLoading(true);
+            try {
+                const searchTerm = document.getElementById('adminSearch').value;
+                
+                // Birinchi 10 adminni olamiz
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                let adminsList = [];
+                // Biz direct har bir adminni yuklashimiz kerak
+                // Shunchaki top 10 ni ko'rsatamiz
+                
+                let html = '<p>Adminlar profillari yuklanmoqda...</p>';
+                
+                // Hardcoded top admins or make a new endpoint
+                const profileResponse = await fetch('/api/behavior/user-roles');
+                const roles = await profileResponse.json();
+                
+                html = '';
+                let count = 0;
+                
+                for (const [admin, role] of Object.entries(roles).slice(0, 8)) {
+                    if (!searchTerm || admin.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        html += `
+                            <div class="profile-card">
+                                <div class="profile-header">${admin}</div>
+                                <div class="profile-info">
+                                    <strong>Rol:</strong> ${role.inferred_role}<br>
+                                    <strong>Tavsif:</strong> ${role.description}
+                                </div>
+                                <div class="profile-actions">
+                                    ${Object.entries(role.primary_actions).slice(0, 4).map(([action, count]) => `
+                                        <div class="profile-action-item">
+                                            <strong>${action}</strong>
+                                            <span>${count} marta</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <button onclick="viewAdminDetail('${admin}')" style="width: 100%; margin-top: 10px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Batafsil</button>
+                            </div>
+                        `;
+                        count++;
+                    }
+                }
+                
+                if (html === '') html = '<p>Admin topilmadi</p>';
+                
+                document.getElementById('adminProfiles').innerHTML = html;
+                showLoading(false);
+            } catch (error) {
+                console.error('Admin profiles error:', error);
+                showLoading(false);
+            }
+        }
+        
+        async function loadUserRoles() {
+            try {
+                const response = await fetch('/api/behavior/user-roles');
+                const roles = await response.json();
+                
+                let html = '';
+                
+                let roleCount = 0;
+                for (const [admin, roleInfo] of Object.entries(roles)) {
+                    if (roleCount < 12) {
+                        html += `
+                            <div class="role-card">
+                                <div class="role-badge">${roleInfo.inferred_role}</div>
+                                <div style="font-weight: bold; margin-bottom: 8px;">${admin}</div>
+                                <div class="role-description">${roleInfo.description}</div>
+                                <div class="role-actions">
+                                    <strong>Asosiy amallar:</strong><br>
+                                    ${Object.keys(roleInfo.primary_actions).join(', ')}
+                                </div>
+                            </div>
+                        `;
+                        roleCount++;
+                    }
+                }
+                
+                document.getElementById('userRoles').innerHTML = html;
+            } catch (error) {
+                console.error('User roles error:', error);
+            }
+        }
+        
+        async function loadSuspiciousSequences() {
+            try {
+                const response = await fetch('/api/suspicious-sequences');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.suspicious_sequences && data.suspicious_sequences.length > 0) {
+                    data.suspicious_sequences.forEach(seq => {
+                        html += `
+                            <div class="sequence-card">
+                                <div class="sequence-pattern">${seq.pattern}</div>
+                                <div class="sequence-info">
+                                    <strong>Admin:</strong> ${seq.admin}<br>
+                                    <strong>Xavf:</strong> <span style="color: #e74c3c; font-weight: bold;">${seq.risk.toUpperCase()}</span>
+                                </div>
+                                <div class="sequence-info">${seq.description}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p style="color: #27ae60;">Suspekt ketma-ketlik topilmadi!</p>';
+                }
+                
+                document.getElementById('suspiciousSequences').innerHTML = html;
+            } catch (error) {
+                console.error('Suspicious sequences error:', error);
+            }
+        }
+        
+        async function loadDataMovement() {
+            try {
+                const response = await fetch('/api/behavior/data-movement');
+                const data = await response.json();
+                
+                let html = '';
+                
+                if (data.patterns && data.patterns.length > 0) {
+                    data.patterns.forEach(pattern => {
+                        const riskClass = pattern.risk_assessment.risk_level === 'high' ? 'risk-high' : 'risk-medium';
+                        
+                        html += `
+                            <div class="movement-item">
+                                <div class="movement-admin">${pattern.admin}</div>
+                                <div class="movement-stats">
+                                    <div class="stat-box">
+                                        <strong>${pattern.imports}</strong>
+                                        IMPORT
+                                    </div>
+                                    <div class="stat-box">
+                                        <strong>${pattern.exports}</strong>
+                                        EXPORT
+                                    </div>
+                                    <div class="stat-box">
+                                        <strong>${pattern.downloads}</strong>
+                                        DOWNLOAD
+                                    </div>
+                                    <div class="stat-box">
+                                        <strong>${pattern.uploads}</strong>
+                                        UPLOAD
+                                    </div>
+                                </div>
+                                <div class="movement-risk ${riskClass}">
+                                    <strong>Risk:</strong> ${pattern.risk_assessment.risk_level.toUpperCase()} (${pattern.risk_assessment.risk_score}/100)<br>
+                                    ${pattern.risk_assessment.factors.join(', ')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p style="color: #27ae60;">Ma\'lumot harakati detektor topilmadi</p>';
+                }
+                
+                document.getElementById('dataMovement').innerHTML = html;
+            } catch (error) {
+                console.error('Data movement error:', error);
+            }
+        }
+        
+        function viewAdminDetail(adminName) {
+            alert(`${adminName} ning batafsil profili (Feature tez orada)`);
+        }
+        
+        // Sahifa yuklanganda boshlash
+        window.addEventListener('DOMContentLoaded', () => {
+            checkDataSourceStatus();
+            loadStats();
+            loadAdminChart();
+            loadActionChart();
+            loadIpChart();
+            loadAnomalies();
+            loadRiskScores();
+            loadAIInsights();
+            loadAdminProfiles();
+            loadUserRoles();
+            loadSuspiciousSequences();
+            loadDataMovement();
+        });
+    </script>
+</body>
+</html>
