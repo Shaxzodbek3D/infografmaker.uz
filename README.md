@@ -30,3 +30,8 @@ Struktura:
 """
 
 print(__doc__)
+
+<img width="2555" height="1271" alt="Screenshot 2026-07-08 091014" src="https://github.com/user-attachments/assets/7c1e5d74-f446-4b91-8fb3-66bb8c1985e1" />
+<img width="2557" height="1269" alt="Screenshot 2026-07-08 091035" src="https://github.com/user-attachments/assets/a5625ceb-eca8-4a52-b96a-5cb959b09315" />
+<img width="2559" height="1270" alt="Screenshot 2026-07-08 090929" src="https://github.com/user-attachments/assets/99f4b133-fc4c-423d-b8b4-f2d7197a7a58" />
+<img width="2556" height="1277" alt="Screenshot 2026-07-08 090951" src="https://github.com/user-attachments/assets/1ec5e6ed-6c31-43fd-b6b5-59341336d530" />
